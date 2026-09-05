@@ -7,3 +7,4 @@ Drop stubs with `/ag-capture <idea>`. Shape them into specs with `/ag-shape`. A 
 - [ ] VS Code highlighter: TextMate grammars via shiki coloured from vscode-theme.json tokenColors — (captured 2026-09-05)
 - [ ] Generic highlighter for non-editor windows, coloured from colors.toml — (captured 2026-09-05)
 - [ ] Backdrop variants in the preview: theme gradient, solid darker_background, transparent — (captured 2026-09-05)
+- [ ] Spec 0006 names SUPER+ALT+S as the snap binding; that is Omarchy's "move window to scratchpad" default. Spec 0001 shipped SUPER+ALT+SHIFT+S; update 0006's title, criteria and README wording to match — (captured 2026-09-05)
