@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+# Install Omasnap for Omarchy for the current user.
+#
+#   bin/install [--dry-run] [--uninstall]
+#
+# Symlinks this checkout into ~/.config/omarchy/plugins/com.keithrowell.omasnap
+# (unless something else is already there, or this checkout already is that
+# directory), writes the desktop file the app launcher reads, links an
+# `omasnap` launcher into ~/.local/bin when that directory exists, checks the
+# required packages from README.md are installed, and prints (never applies)
+# the Hyprland binding and window rule. Idempotent: a second run reports
+# "unchanged". Works from this checkout and from the plugin path itself (a
+# submodule clone).
+set -euo pipefail
+
+usage() {
+  echo "usage: bin/install [--dry-run] [--uninstall]"
+}
+
+DRY_RUN=0
+UNINSTALL=0
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    --uninstall) UNINSTALL=1 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "install: unknown option '$arg'" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+LAUNCH="$ROOT/bin/omasnap"
+# The canonical install location, used for the printed binding whatever
+# directory this runs from (the binding is shared across machines).
+PLUGIN_DIR='~/.config/omarchy/plugins/com.keithrowell.omasnap'
+PLUGIN="$HOME/.config/omarchy/plugins/com.keithrowell.omasnap"
+
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+APP_DIR="$DATA_HOME/applications"
+DESKTOP="$APP_DIR/Omasnap.desktop"
+BIN_DIR="$HOME/.local/bin"
+LAUNCHER="$BIN_DIR/omasnap"
+
+if [[ ! -x "$LAUNCH" ]]; then
+  echo "install: $LAUNCH is missing or not executable" >&2
+  exit 1
+fi
+
+say() { printf '%s\n' "$*"; }
+would() { if (( DRY_RUN )); then say "$1: would $2"; return 0; else return 1; fi; }
+
+# Uninstall removes only what this checkout owns: a plugin symlink that
+# resolves to ROOT, a desktop file whose Exec points into ROOT, and a
+# launcher symlink that points at ROOT's bin/omasnap. Anything else with
+# those names is reported and left alone. A submodule checkout (ROOT is
+# itself PLUGIN) is never removed.
+owns_desktop() {
+  [[ -f "$DESKTOP" ]] && grep -qF -e "Exec=\"$ROOT/" -e "Exec=$ROOT/" -- "$DESKTOP"
+}
+owns_launcher() {
+  [[ -L "$LAUNCHER" && "$(readlink "$LAUNCHER")" == "$LAUNCH" ]]
+}
+
+if (( UNINSTALL )); then
+  if [[ -L "$PLUGIN" ]]; then
+    target="$(readlink -f "$PLUGIN" 2>/dev/null || true)"
+    if [[ "$target" == "$ROOT" && "$ROOT" != "$PLUGIN" ]]; then
+      would "plugin" "remove $PLUGIN" || { rm -f "$PLUGIN"; say "plugin: removed $PLUGIN"; }
+    else
+      say "plugin: not ours, left alone $PLUGIN"
+    fi
+  elif [[ -e "$PLUGIN" ]]; then
+    if [[ "$PLUGIN" == "$ROOT" ]]; then
+      say "plugin: is this checkout, left alone $PLUGIN"
+    else
+      say "plugin: not ours, left alone $PLUGIN"
+    fi
+  else
+    say "plugin: absent"
+  fi
+
+  if [[ -e "$DESKTOP" || -L "$DESKTOP" ]]; then
+    if owns_desktop; then
+      would "desktop file" "remove $DESKTOP" || { rm -f "$DESKTOP"; say "desktop file: removed $DESKTOP"; }
+    else
+      say "desktop file: not ours, left alone $DESKTOP"
+    fi
+  else
+    say "desktop file: absent"
+  fi
+
+  if [[ -e "$LAUNCHER" || -L "$LAUNCHER" ]]; then
+    if owns_launcher; then
+      would "launcher" "remove $LAUNCHER" || { rm -f "$LAUNCHER"; say "launcher: removed $LAUNCHER"; }
+    else
+      say "launcher: not ours, left alone $LAUNCHER"
+    fi
+  else
+    say "launcher: absent"
+  fi
+
+  if (( ! DRY_RUN )) && command -v update-desktop-database >/dev/null 2>&1 && [[ -d "$APP_DIR" ]]; then
+    update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
+  fi
+  exit 0
+fi
+
+# Plugin symlink: never create one when ROOT is already PLUGIN (a submodule
+# checkout), and never touch a foreign directory or dangling symlink.
+resolved_plugin="$(readlink -f "$PLUGIN" 2>/dev/null || true)"
+if [[ -n "$resolved_plugin" && "$resolved_plugin" == "$ROOT" ]]; then
+  say "plugin: unchanged $PLUGIN -> $ROOT"
+elif [[ -e "$PLUGIN" || -L "$PLUGIN" ]]; then
+  say "plugin: not ours, left alone $PLUGIN"
+elif ! would "plugin" "link $PLUGIN -> $ROOT"; then
+  mkdir -p "$(dirname "$PLUGIN")"
+  ln -s "$ROOT" "$PLUGIN"
+  say "plugin: linked $PLUGIN -> $ROOT"
+fi
+
+# Desktop file. Exec is double-quoted per the desktop entry spec because the
+# development checkout's path may contain a space. No Icon= line (no asset
+# yet) and no StartupWMClass: every Quickshell window shares the same class.
+desktop_content() {
+  cat <<EOF
+[Desktop Entry]
+Version=1.0
+Name=Omasnap
+Comment=Turn selected code into a beautiful, unmistakably Omarchy image for a social post, a doc, or a chat.
+Exec="$LAUNCH"
+Terminal=false
+Type=Application
+Categories=Utility;Graphics;
+Keywords=code;snapshot;screenshot;image;
+StartupNotify=false
+EOF
+}
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+desktop_content >"$tmp"
+
+if [[ -f "$DESKTOP" ]] && cmp -s "$tmp" "$DESKTOP"; then
+  say "desktop file: unchanged $DESKTOP"
+elif ! would "desktop file" "write $DESKTOP"; then
+  mkdir -p "$APP_DIR"
+  cp "$tmp" "$DESKTOP"
+  chmod 0644 "$DESKTOP"
+  say "desktop file: written $DESKTOP"
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
+  fi
+fi
+
+# Optional PATH launcher, only when ~/.local/bin already exists.
+if [[ -d "$BIN_DIR" ]]; then
+  if [[ -L "$LAUNCHER" && "$(readlink "$LAUNCHER")" == "$LAUNCH" ]]; then
+    say "launcher: unchanged $LAUNCHER -> $LAUNCH"
+  elif ! would "launcher" "link $LAUNCHER -> $LAUNCH"; then
+    ln -sfn "$LAUNCH" "$LAUNCHER"
+    say "launcher: linked $LAUNCHER -> $LAUNCH"
+  fi
+else
+  say "launcher: skipped ($BIN_DIR does not exist; create it to get an omasnap command)"
+fi
+
+# Required packages: the single source of truth is the `pacman -S --needed
+# ...` line in README.md, so the check and the docs can never drift apart.
+# Read-only, so it runs under --dry-run too; a missing package is reported
+# but never fails the install (the deploy gate must never block on it).
+PKG_LINE="$(grep -m1 -oE 'pacman -S --needed .*' "$ROOT/README.md" | cut -d' ' -f4-)"
+read -ra PKGS <<< "$PKG_LINE"
+
+if ! command -v pacman >/dev/null 2>&1; then
+  say "packages: skipped (pacman not on PATH)"
+else
+  pkg_err="$(pacman -Q "${PKGS[@]}" 2>&1 >/dev/null)" || true
+  missing=()
+  while IFS= read -r line; do
+    if [[ "$line" =~ error:\ package\ \'([^\']+)\'\ was\ not\ found ]]; then
+      missing+=("${BASH_REMATCH[1]}")
+    fi
+  done <<< "$pkg_err"
+  if [[ ${#missing[@]} -eq 0 ]]; then
+    say "packages: all ${#PKGS[@]} present"
+  else
+    say "packages: missing ${missing[*]}"
+    say "  sudo pacman -S --needed ${missing[*]}"
+  fi
+fi
+
+# The Hyprland binding and window rule: printed, never applied. Omarchy's
+# Hyprland config is Lua; the canonical plugin path is used here (not ROOT)
+# since this snippet is meant to be pasted once and shared across machines.
+if command -v uwsm-app >/dev/null 2>&1; then
+  action="uwsm-app -- $PLUGIN_DIR/bin/omasnap"
+  uwsm_note=""
+else
+  action="$PLUGIN_DIR/bin/omasnap"
+  uwsm_note=" (uwsm-app is not on PATH, so the binding launches Omasnap directly)"
+fi
+
+say ""
+say "Add these to ~/.config/hypr/bindings.lua (not applied)$uwsm_note"
+say ""
+say "-- Omasnap: snap the selected code into an Omarchy-styled image."
+say "o.bind(\"SUPER + ALT + SHIFT + S\", \"Omasnap\", \"$action\")"
+say "o.window({ title = \"^(Omasnap)\$\" }, { float = true, center = true })"

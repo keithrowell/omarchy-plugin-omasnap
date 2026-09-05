@@ -129,7 +129,7 @@ Start from Pacman's `bin/install` and change:
    Add these to ~/.config/hypr/bindings.lua (not applied)
 
    -- Omasnap: snap the selected code into an Omarchy-styled image.
-   o.bind("SUPER + ALT + S", "Omasnap", "~/.config/omarchy/plugins/com.keithrowell.omasnap/bin/omasnap")
+   o.bind("SUPER + ALT + SHIFT + S", "Omasnap", "~/.config/omarchy/plugins/com.keithrowell.omasnap/bin/omasnap")
    o.window({ title = "^(Omasnap)$" }, { float = true, center = true })
    ```
 
