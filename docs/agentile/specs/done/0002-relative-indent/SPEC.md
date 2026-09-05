@@ -1,7 +1,8 @@
 ---
 title: Relative indent — strip the selection's common leading whitespace so the shallowest line sits flush left
 slug: relative-indent
-status: in_progress
+status: shipped
+shipped_at: 2026-09-05T23:51:08Z
 depends_on: []
 type: feature
 route: background
