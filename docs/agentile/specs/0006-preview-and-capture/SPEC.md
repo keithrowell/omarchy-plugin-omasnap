@@ -1,7 +1,7 @@
 ---
 title: Preview and capture — SUPER+ALT+S snaps the selection, previews it, copies or saves the PNG
 slug: preview-and-capture
-status: ready
+status: in_progress
 depends_on: [spike-selection-and-highlight-path, zed-highlighter, frame-renderer]
 type: feature
 route: foreground
@@ -9,9 +9,9 @@ business_value: high
 technical_certainty: medium
 created: 2026-09-05
 outcome: with code selected in Zed, SUPER+ALT+S shows the preview within about a second, Enter puts a PNG on the clipboard that pastes into a browser, S saves it under ~/Pictures
-claimed_by:
-label:
-claimed_at:
+claimed_by: 1a113cd5-6977-4f8d-8308-ac8ac727576e
+label: 
+claimed_at: 2026-09-05T16:04:21Z
 ---
 
 # Preview and capture — SUPER+ALT+S snaps the selection, previews it, copies or saves the PNG
