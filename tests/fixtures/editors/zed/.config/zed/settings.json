@@ -1,0 +1,29 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+{
+  "lsp_document_colors": "background",
+  /* agent servers block, deliberately left in to exercise
+     block-comment stripping */
+  "agent_servers": {
+    "claude-acp": {
+      "type": "registry",
+    },
+  },
+  "context_servers": {
+    "atlassian": {
+      "command": {
+        "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/sse"],
+      },
+    },
+  },
+  "ui_font_family": "Zed Plex Sans",
+  "ui_font_size": 15,
+  "buffer_font_size": 13,
+  "buffer_font_family": "FiraCode Nerd Font",
+  "terminal": {
+    // inline comment with a fake "//not a real comment" inside quotes above
+    "shell": "system",
+  },
+}

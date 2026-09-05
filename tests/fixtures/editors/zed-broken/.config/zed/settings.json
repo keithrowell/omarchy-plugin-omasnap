@@ -1,0 +1,7 @@
+// Hand-edited settings file that is broken beyond comment/comma stripping:
+// a stray unescaped control character sits right after "editor" below.
+{
+  "buffer_font_size": 13,
+  "buffer_font_family": "Iosevka Nerd Font",
+  "note": "broken tail" old_junk_token_not_valid_json
+}

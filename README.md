@@ -66,9 +66,9 @@ installed, with the command to install it.
 
 Every colour comes from `~/.local/state/omarchy/current/theme/`:
 `colors.toml` for the frame and chrome, `zed-theme.json` for Zed's syntax
-colours, `vscode.json` for VS Code's. The theme is read fresh on every snap,
-so switching the Omarchy theme changes the very next image with no restart.
-Nothing is ever hard-coded.
+colours, `vscode-theme.json` for VS Code's. The theme is read fresh on every
+snap, so switching the Omarchy theme changes the very next image with no
+restart. Nothing is ever hard-coded.
 
 ## Non-goals
 
