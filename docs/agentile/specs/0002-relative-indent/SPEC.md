@@ -1,7 +1,7 @@
 ---
 title: Relative indent — strip the selection's common leading whitespace so the shallowest line sits flush left
 slug: relative-indent
-status: ready
+status: in_progress
 depends_on: []
 type: feature
 route: background
@@ -9,9 +9,9 @@ business_value: high
 technical_certainty: high
 created: 2026-09-06
 outcome: snapping a selection whose every line starts with six tabs renders the shallowest line at column one with deeper lines keeping their extra indent, verified by tests on lib/ and by a fixture render
-claimed_by:
-label:
-claimed_at:
+claimed_by: 1a113cd5-6977-4f8d-8308-ac8ac727576e
+label: 
+claimed_at: 2026-09-05T23:36:46Z
 ---
 
 # Relative indent — strip the selection's common leading whitespace so the shallowest line sits flush left
