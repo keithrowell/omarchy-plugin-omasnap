@@ -1,7 +1,7 @@
 ---
 title: Zed highlighter — tree-sitter with Zed's queries, coloured from the Zed Omarchy theme
 slug: zed-highlighter
-status: ready
+status: in_progress
 depends_on: [spike-selection-and-highlight-path, theme-reader]
 type: feature
 route: foreground
@@ -9,9 +9,9 @@ business_value: high
 technical_certainty: medium
 created: 2026-09-05
 outcome: highlight(text, language, theme) returns per-line styled spans whose colours equal the Zed theme's syntax map for every fixture language, verified by tests and by a side-by-side with Zed on one fixture
-claimed_by:
-label:
-claimed_at:
+claimed_by: 1a113cd5-6977-4f8d-8308-ac8ac727576e
+label: 
+claimed_at: 2026-09-05T14:33:33Z
 ---
 
 # Zed highlighter — tree-sitter with Zed's queries, coloured from the Zed Omarchy theme
