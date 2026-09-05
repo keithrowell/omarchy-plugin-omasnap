@@ -1,7 +1,7 @@
 ---
 title: Frame renderer — the Omarchy-styled window, blurred-wallpaper backdrop and PNG export in QML
 slug: frame-renderer
-status: ready
+status: in_progress
 depends_on: [theme-reader]
 type: feature
 route: foreground
@@ -9,9 +9,9 @@ business_value: high
 technical_certainty: medium
 created: 2026-09-05
 outcome: bin/omasnap --fixture tests/fixtures/render/hello.json --out /tmp/x.png produces a PNG that a reviewer judges as obviously Omarchy against the checklist below, under two different themes
-claimed_by:
-label:
-claimed_at:
+claimed_by: 1a113cd5-6977-4f8d-8308-ac8ac727576e
+label: 
+claimed_at: 2026-09-05T13:17:59Z
 ---
 
 # Frame renderer — the Omarchy-styled window, blurred-wallpaper backdrop and PNG export in QML
