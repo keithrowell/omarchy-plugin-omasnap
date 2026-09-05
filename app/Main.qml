@@ -3,19 +3,23 @@ import QtQuick.Window
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
+import "Grab.js" as Grab
 
-// Entry point: `qs -p app/Main.qml` (via bin/omasnap). Two modes, chosen by
-// environment variables `bin/omasnap` sets (see the plan for spec 0004 —
-// `qs` forwards no CLI arguments to QML):
+// Entry point: `qs -p app/Main.qml` (via bin/omasnap). Three modes, chosen
+// by environment variables `bin/omasnap` sets (see the plans for specs
+// 0004 and 0006 — `qs` forwards no CLI arguments to QML):
 //
-// - `OMASNAP_INPUT` set: render mode. Load the JSON at that path (built by
-//   `lib/input.mjs` from a fixture and the current theme), show it in
-//   `Snap`, and once it settles, grab it to a PNG at `OMASNAP_OUT` and quit.
-// - Otherwise: the placeholder window from spec 0001, unchanged until spec
-//   0006 gives it a real preview.
+// - `OMASNAP_MODE=preview`: the live preview (spec 0006). Loads
+//   `Preview.qml`, which reads `OMASNAP_INPUT`/`OMASNAP_REQUEST` itself.
+// - `OMASNAP_INPUT` set (and not preview mode): render mode. Load the JSON
+//   at that path (built by `lib/input.mjs` from a fixture and the current
+//   theme), show it in `Snap`, and once it settles, grab it to a PNG at
+//   `OMASNAP_OUT` and quit.
+// - Otherwise: the placeholder window from spec 0001.
 ShellRoot {
     id: root
 
+    readonly property string mode: Quickshell.env("OMASNAP_MODE") || ""
     readonly property string inputPath: Quickshell.env("OMASNAP_INPUT") || ""
     readonly property string outPath: Quickshell.env("OMASNAP_OUT") || ""
 
@@ -26,12 +30,21 @@ ShellRoot {
     readonly property int renderTimeoutMs: 5000
 
     Loader {
-        active: root.inputPath !== ""
+        active: root.mode === "preview"
+        sourceComponent: previewWindow
+    }
+    Loader {
+        active: root.mode !== "preview" && root.inputPath !== ""
         sourceComponent: renderWindow
     }
     Loader {
-        active: root.inputPath === ""
+        active: root.mode !== "preview" && root.inputPath === ""
         sourceComponent: placeholderWindow
+    }
+
+    Component {
+        id: previewWindow
+        Preview {}
     }
 
     Component {
@@ -65,16 +78,15 @@ ShellRoot {
             function grab() {
                 if (renderFloating.grabbed) return;
                 renderFloating.grabbed = true;
-                const targetWidth = snapItem.width * snapItem.exportScale / renderFloating.screenScale;
-                const targetHeight = snapItem.height * snapItem.exportScale / renderFloating.screenScale;
+                const size = Grab.exportSize(snapItem, snapItem.exportScale, renderFloating.screenScale);
                 snapItem.grabToImage(function (result) {
                     const ok = result.saveToFile(root.outPath);
                     console.info("render: " + (ok ? "wrote " : "FAILED to write ") + root.outPath
                         + " (" + snapItem.width + "x" + snapItem.height + " logical, "
-                        + Math.round(targetWidth) + "x" + Math.round(targetHeight) + " px requested, screen scale "
+                        + Math.round(size.width) + "x" + Math.round(size.height) + " px requested, screen scale "
                         + renderFloating.screenScale + ")");
                     Qt.quit();
-                }, Qt.size(targetWidth, targetHeight));
+                }, Qt.size(size.width, size.height));
             }
 
             FileView {

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { stripJsonc, readEditorFont } from "../lib/editors.mjs";
+import { stripJsonc, readEditorFont, resolveFontFamily } from "../lib/editors.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const FIXTURES = join(ROOT, "tests", "fixtures", "editors");
@@ -69,4 +69,32 @@ test("readEditorFont falls back to monospace when the injected fcMatch throws", 
 test('readEditorFont("other") always returns the system font', () => {
   const font = readEditorFont("other", { fcMatch: () => "Bar Mono" });
   assert.deepEqual(font, { family: "Bar Mono", size: 13, source: "system" });
+});
+
+// --- resolveFontFamily -------------------------------------------------------
+
+test("resolveFontFamily: an uninstalled family substitutes to the system monospace family", () => {
+  const fcMatch = (family) => (family === "FiraCode Nerd Font" ? "Liberation Sans" : "JetBrainsMono Nerd Font,JetBrainsMono NF");
+  const result = resolveFontFamily("FiraCode Nerd Font", { fcMatch });
+  assert.deepEqual(result, { family: "JetBrainsMono Nerd Font", substituted: true });
+});
+
+test("resolveFontFamily: an installed family (fc-match echoes it back) is unchanged", () => {
+  const fcMatch = (family) => family;
+  const result = resolveFontFamily("JetBrainsMono Nerd Font", { fcMatch });
+  assert.deepEqual(result, { family: "JetBrainsMono Nerd Font", substituted: false });
+});
+
+test("resolveFontFamily: the comparison is case-insensitive and trims whitespace", () => {
+  const fcMatch = () => "  jetbrainsmono nerd font  ";
+  const result = resolveFontFamily("JetBrainsMono Nerd Font", { fcMatch });
+  assert.deepEqual(result, { family: "JetBrainsMono Nerd Font", substituted: false });
+});
+
+test("resolveFontFamily: a throwing fcMatch never throws, falls back to plain monospace", () => {
+  const fcMatch = () => {
+    throw new Error("fc-match: command not found");
+  };
+  const result = resolveFontFamily("FiraCode Nerd Font", { fcMatch });
+  assert.deepEqual(result, { family: "monospace", substituted: true });
 });

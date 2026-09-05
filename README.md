@@ -9,7 +9,37 @@ extension.
 
 ![Omasnap preview](preview.png)
 
-*(Screenshot lands with spec 0006, once the real snap window exists.)*
+## Usage
+
+Select some code in Zed (or anywhere else — see "Editors" below), press
+**`SUPER + ALT + SHIFT + S`**. Within about a second a floating "Omasnap"
+window appears, showing the selection framed exactly as the active editor
+colours it, under the current Omarchy theme:
+
+- **Enter** (or the **Copy** button) puts the rendered PNG on the clipboard
+  (`image/png`) — paste it anywhere that accepts an image.
+- **S** (or **Save**) writes it to `$(xdg-user-dir PICTURES)` (usually
+  `~/Pictures`) as `omasnap-YYYY-MM-DD_HH-MM-SS.png`. Both actions leave the
+  window open, so you can do both, or try a different language first.
+- The language selector (bottom-left) shows what was detected from the
+  filename or a `#!` shebang; pick a different one (or "plain", for no
+  highlighting) to re-highlight without re-selecting anything.
+- **Esc** (or **Close**) closes the window. Pressing the binding again while
+  a preview is open doesn't close it — it replaces it with a fresh snap of
+  whatever is selected then (or notifies "Nothing selected" if nothing is).
+
+Selections over 200 lines are truncated (with a warning shown in the bar);
+everything is read fresh from `wl-paste --primary` (falling back to the
+clipboard) and the live Omarchy theme on every press — nothing is cached
+between snaps.
+
+### Editors
+
+Zed is colour-exact (tree-sitter + Zed's own `highlights.scm`, see below).
+Anywhere else — a terminal, a browser, another editor — still snaps,
+highlighted the same way, with the language detected from a shebang line
+when there's no filename to go on; VS Code's own exact colouring is a
+later spec.
 
 ## Install
 
@@ -108,8 +138,9 @@ restart. Nothing is ever hard-coded.
 ## Development
 
 ```bash
-bin/omasnap                        # run from the checkout
-node --test tests/*.test.mjs       # installer and manifest tests
+bin/omasnap                        # run from the checkout: snap the current selection and preview it
+bin/omasnap --benchmark            # time the non-window steps of a live snap (no window opens)
+node --test tests/*.test.mjs       # every test in the project
 bin/build-grammars                 # compile vendored grammars (first run only; node --test does this too)
 bin/build-grammars --check         # report what's missing/stale without building
 ```
@@ -122,6 +153,11 @@ how builders and reviewers check the look without a live selection. It reads
 the current Omarchy theme by default; `--theme-dir` and `--wallpaper`
 override which theme and wallpaper it renders against, for comparing themes
 side by side.
+
+`OMASNAP_AUTO=copy|save|shot|none bin/omasnap` drives the live preview
+window unattended (used to test Copy/Save without a human, or to grab a
+picture of the bar itself with `shot`) — the same environment variable
+Pacman's `PACMAN_DEBUG_KEYS` plays a similar role for.
 
 `docs/agentile/` and `docs/adr/` carry the backlog and the decision records
 this project is built from (see `CLAUDE.md`).

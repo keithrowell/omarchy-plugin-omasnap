@@ -1,17 +1,39 @@
 #!/usr/bin/env bash
 # Launch Omasnap as a standalone Quickshell process.
 #
-#   bin/omasnap                                                    # the live app (placeholder until spec 0006)
+#   bin/omasnap                                                    # live: snap the current selection and preview it
+#   bin/omasnap --benchmark [--language X]                          # time the non-window steps of the live path
 #   bin/omasnap --fixture F --out P [--theme-dir D] [--wallpaper W] # headless fixture render
 #
-# Render mode runs `lib/input.mjs` with Node to build one JSON input (the
-# fixture's spans resolved against a theme), then starts `qs` with
+# Live mode (see the plan for spec 0006) never puts the selection text in a
+# shell variable, argv, or a shell invocation: `wl-paste` writes straight to
+# a 0600 file, `lib/snap.mjs` (Node) reads that file and writes JSON, and
+# `app/Main.qml`'s preview mode reads the JSON. The only `sh -c` on the
+# whole run path is inside `app/Preview.qml`'s Copy action, and it only ever
+# sees our own rendered PNG's path.
+#
+# Fixture/render mode runs `lib/input.mjs` with Node to build one JSON input
+# (the fixture's spans resolved against a theme), then starts `qs` with
 # OMASNAP_INPUT/OMASNAP_OUT set; `app/Main.qml`'s render mode grabs the
 # frame to `--out` and quits. See the plan for spec 0004.
 set -euo pipefail
 
+# Every file this script creates below (the selection/window/request/input
+# files, the runtime directory itself) must be private to this user: the
+# selection text passes through one of them. `mkdir -m 700`/similar only
+# sets a directory's mode at the moment it's *created* — it has no effect
+# if the directory already exists, and does nothing at all for a plain `>`
+# redirect or `mkdir -p`'s intermediate parents. A restrictive umask, set
+# once here before anything is created, is what actually guarantees it:
+# every subsequent `mkdir`, redirect, and Node `writeFileSync` in this
+# script (and in `lib/snap.mjs`/`lib/input.mjs`, which inherit it) comes out
+# 0700/0600 regardless of the umask this script was invoked with (a
+# Hyprland-launched process typically inherits systemd's default 022).
+umask 077
+
 usage() {
-  echo "usage: bin/omasnap [--fixture F --out P [--theme-dir D] [--wallpaper W]]"
+  echo "usage: bin/omasnap [--benchmark] [--language X]"
+  echo "       bin/omasnap --fixture F --out P [--theme-dir D] [--wallpaper W]"
 }
 
 if ! command -v qs >/dev/null 2>&1; then
@@ -36,18 +58,28 @@ FIXTURE=""
 OUT=""
 THEME_DIR=""
 WALLPAPER=""
+BENCHMARK=0
+LANGUAGE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --fixture) require_value "$@"; FIXTURE="$2"; shift 2 ;;
     --out) require_value "$@"; OUT="$2"; shift 2 ;;
     --theme-dir) require_value "$@"; THEME_DIR="$2"; shift 2 ;;
     --wallpaper) require_value "$@"; WALLPAPER="$2"; shift 2 ;;
+    --benchmark) BENCHMARK=1; shift ;;
+    --language) require_value "$@"; LANGUAGE="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "omasnap: unknown option '$1'" >&2; usage >&2; exit 2 ;;
   esac
 done
 
 if [ -z "$FIXTURE" ]; then
+  if ! command -v node >/dev/null 2>&1; then
+    echo "omasnap: 'node' was not found on PATH." >&2
+    echo "Install it with: sudo pacman -S nodejs" >&2
+    exit 1
+  fi
+
   # A live selection is highlighted with the vendored Zed grammars
   # (docs/adr/0002); if none have been compiled yet, say so once, briefly —
   # the highlighter itself still renders (in plain text, uncoloured) rather
@@ -55,7 +87,123 @@ if [ -z "$FIXTURE" ]; then
   if [ -x "$ROOT/bin/build-grammars" ] && ! "$ROOT/bin/build-grammars" --check >/dev/null 2>&1; then
     echo "omasnap: some Zed grammars are not built yet; run bin/install (highlighting will be plain text until then)" >&2
   fi
-  exec qs -p "$ROOT/app/Main.qml"
+
+  # Per-run files under a 0700 directory, each file itself 0600 (the
+  # selection text passes through SELECTION) — guaranteed by `umask 077`
+  # above, not by the `-m 700` here (belt-and-braces only: it has no effect
+  # if this directory already exists from an earlier run, which is the
+  # common case). All removed on exit, whether this script exits normally,
+  # on an error, or because `qs` was killed to replace an already-open
+  # preview with a new one. This script does not `exec qs`, unlike fixture
+  # mode below: it needs to run after `qs` exits, to clean these up.
+  RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/omasnap"
+  mkdir -p -m 700 "$RUNTIME_DIR"
+  SELECTION="$RUNTIME_DIR/selection-$$.txt"
+  WINDOW="$RUNTIME_DIR/window-$$.json"
+  REQUEST="$RUNTIME_DIR/request-$$.json"
+  INPUT="$RUNTIME_DIR/input-$$.json"
+  PREVIEW_PNG="$RUNTIME_DIR/preview-$$.png"
+  trap 'rm -f "$SELECTION" "$WINDOW" "$REQUEST" "$INPUT" "$PREVIEW_PNG"' EXIT
+
+  NODE_ARGS=(--selection "$SELECTION" --window "$WINDOW" --request "$REQUEST" --out "$INPUT")
+  if [ -n "$LANGUAGE" ]; then
+    NODE_ARGS+=(--language "$LANGUAGE")
+  fi
+
+  if [ "$BENCHMARK" -eq 1 ]; then
+    total_start=$(date +%s%N)
+
+    t0=$(date +%s%N)
+    wl-paste --primary --no-newline > "$SELECTION" 2>/dev/null || true
+    if [ ! -s "$SELECTION" ]; then
+      wl-paste --no-newline > "$SELECTION" 2>/dev/null || true
+    fi
+    t1=$(date +%s%N)
+    echo "selection: $(( (t1 - t0) / 1000000 )) ms"
+
+    if [ ! -s "$SELECTION" ]; then
+      notify-send "Omasnap" "Nothing selected" 2>/dev/null || true
+      exit 0
+    fi
+
+    t0=$(date +%s%N)
+    if command -v hyprctl >/dev/null 2>&1 && hyprctl activewindow -j > "$WINDOW" 2>/dev/null; then
+      :
+    else
+      echo '{}' > "$WINDOW"
+    fi
+    t1=$(date +%s%N)
+    echo "window: $(( (t1 - t0) / 1000000 )) ms"
+
+    t0=$(date +%s%N)
+    set +e
+    node "$ROOT/lib/snap.mjs" "${NODE_ARGS[@]}"
+    status=$?
+    set -e
+    t1=$(date +%s%N)
+    echo "prepare: $(( (t1 - t0) / 1000000 )) ms"
+
+    total_end=$(date +%s%N)
+    echo "total: $(( (total_end - total_start) / 1000000 )) ms"
+
+    if [ "$status" -eq 3 ]; then
+      notify-send "Omasnap" "Nothing selected" 2>/dev/null || true
+      exit 0
+    elif [ "$status" -ne 0 ]; then
+      exit 1
+    fi
+    exit 0
+  fi
+
+  wl-paste --primary --no-newline > "$SELECTION" 2>/dev/null || true
+  if [ ! -s "$SELECTION" ]; then
+    wl-paste --no-newline > "$SELECTION" 2>/dev/null || true
+  fi
+  if [ ! -s "$SELECTION" ]; then
+    notify-send "Omasnap" "Nothing selected" 2>/dev/null || true
+    exit 0
+  fi
+
+  if command -v hyprctl >/dev/null 2>&1 && hyprctl activewindow -j > "$WINDOW" 2>/dev/null; then
+    :
+  else
+    echo '{}' > "$WINDOW"
+  fi
+
+  set +e
+  node "$ROOT/lib/snap.mjs" "${NODE_ARGS[@]}"
+  status=$?
+  set -e
+  if [ "$status" -eq 3 ]; then
+    notify-send "Omasnap" "Nothing selected" 2>/dev/null || true
+    exit 0
+  elif [ "$status" -ne 0 ]; then
+    notify-send "Omasnap" "Omasnap failed (see terminal)" 2>/dev/null || true
+    exit 1
+  fi
+
+  # `~/Pictures` (or wherever xdg-user-dir PICTURES points) is created here,
+  # once, so Preview.qml's Save action only ever has to write a file, never
+  # create a directory.
+  PICTURES="$(xdg-user-dir PICTURES 2>/dev/null || true)"
+  if [ -z "$PICTURES" ]; then
+    PICTURES="$HOME/Pictures"
+  fi
+  mkdir -p "$PICTURES"
+
+  # Replace any preview already open from a previous run of this binding
+  # (only this config's instances — verified with `qs list` before/after in
+  # the spec's build report).
+  qs kill -p "$ROOT/app/Main.qml" >/dev/null 2>&1 || true
+
+  OMASNAP_MODE=preview \
+    OMASNAP_INPUT="$INPUT" \
+    OMASNAP_REQUEST="$REQUEST" \
+    OMASNAP_ROOT="$ROOT" \
+    OMASNAP_PREVIEW_PNG="$PREVIEW_PNG" \
+    qs -p "$ROOT/app/Main.qml"
+
+  exit 0
 fi
 
 if [ -z "$OUT" ]; then
@@ -85,7 +233,7 @@ fi
 OUT="$(readlink -f "$OUT_DIR")/$(basename "$OUT")"
 
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/omasnap"
-mkdir -p "$RUNTIME_DIR"
+mkdir -p -m 700 "$RUNTIME_DIR"
 INPUT="$RUNTIME_DIR/input-$$.json"
 trap 'rm -f "$INPUT"' EXIT
 
