@@ -1,7 +1,8 @@
 ---
 title: Omarchy window chrome — Hyprland border, corners and gaps from the live config, maze mark in the title bar, sharp wallpaper, no wordmark
 slug: omarchy-window-chrome
-status: in_progress
+status: shipped
+shipped_at: 2026-09-05T23:36:34Z
 depends_on: []
 type: feature
 route: foreground
