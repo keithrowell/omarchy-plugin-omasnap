@@ -1,7 +1,8 @@
 ---
 title: Zed highlighter — tree-sitter with Zed's queries, coloured from the Zed Omarchy theme
 slug: zed-highlighter
-status: in_progress
+status: shipped
+shipped_at: 2026-09-05T15:58:28Z
 depends_on: [spike-selection-and-highlight-path, theme-reader]
 type: feature
 route: foreground
