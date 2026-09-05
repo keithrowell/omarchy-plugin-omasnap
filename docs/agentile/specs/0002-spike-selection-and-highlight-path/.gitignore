@@ -1,0 +1,5 @@
+grammars/
+node/
+node_modules/
+out/
+*.so

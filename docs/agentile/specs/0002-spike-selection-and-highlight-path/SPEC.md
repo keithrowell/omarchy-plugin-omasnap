@@ -1,7 +1,7 @@
 ---
 title: Spike — verify the primary-selection input path and the tree-sitter + Zed-queries highlight path
 slug: spike-selection-and-highlight-path
-status: ready
+status: in_progress
 depends_on: []
 type: spike
 route: spike
@@ -9,9 +9,9 @@ business_value: high
 technical_certainty: low
 created: 2026-09-05
 outcome: findings.md answers every question below with evidence, within a 2-hour timebox, and ADR-0001 is amended if any answer changes the stack
-claimed_by:
-label:
-claimed_at:
+claimed_by: 1a113cd5-6977-4f8d-8308-ac8ac727576e
+label: 
+claimed_at: 2026-09-05T12:02:14Z
 ---
 
 # Spike — verify the primary-selection input path and the tree-sitter + Zed-queries highlight path
