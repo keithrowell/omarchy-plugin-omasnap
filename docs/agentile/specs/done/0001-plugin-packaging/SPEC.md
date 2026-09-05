@@ -1,7 +1,8 @@
 ---
 title: Plugin packaging — manifest, launcher, install script, README and licence
 slug: plugin-packaging
-status: in_progress
+status: shipped
+shipped_at: 2026-09-05T12:02:04Z
 depends_on: []
 type: feature
 route: background
