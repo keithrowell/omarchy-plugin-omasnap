@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { join, resolve, dirname, relative, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateFixture, resolveSpans, buildInput, CONSTANTS } from "../lib/input.mjs";
+import { validateFixture, resolveSpans, buildInput, CONSTANTS, parseUserShellFont, parseThemeShellFont, readHeaderFont } from "../lib/input.mjs";
 import { readTheme } from "../lib/theme.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -162,6 +162,116 @@ test("buildInput: falls back to colors.toml when the theme has no Zed file", () 
   }
 });
 
+// --- look (Hyprland's chrome, see lib/hypr.mjs) ---------------------------
+
+test("buildInput: an explicit look passes straight through into the JSON", () => {
+  const look = { borderSize: 4, rounding: 8, gapsOut: 12, gapsIn: 6, activeBorder: "#ff00ff", shadowEnabled: true, source: "hyprctl" };
+  const input = buildInput({ snap: HELLO, theme: GRUVBOX, look });
+  assert.deepEqual(input.look, look);
+});
+
+test("buildInput: without an explicit look, one is still computed (falls back to defaults off-Hyprland, accent as activeBorder)", () => {
+  const input = buildInput({ snap: HELLO, theme: GRUVBOX });
+  assert.equal(typeof input.look.borderSize, "number");
+  assert.equal(typeof input.look.rounding, "number");
+  assert.equal(typeof input.look.gapsOut, "number");
+  assert.equal(typeof input.look.gapsIn, "number");
+  assert.match(input.look.activeBorder, /^#[0-9a-f]{6}$/);
+  assert.equal(typeof input.look.shadowEnabled, "boolean");
+});
+
+test("CLI: the printed JSON's look has all six keys", () => {
+  const out = execFileSync(
+    process.execPath,
+    [join(ROOT, "lib", "input.mjs"), "--fixture", HELLO_PATH, "--theme-dir", GRUVBOX_DIR],
+    { encoding: "utf8" },
+  );
+  const input = JSON.parse(out);
+  assert.deepEqual(Object.keys(input.look).sort(), ["activeBorder", "borderSize", "gapsIn", "gapsOut", "rounding", "shadowEnabled", "source"].sort());
+});
+
+// --- headerFont (the shell's configured font, see lib/input.mjs) ---------
+
+test("parseUserShellFont: a font.family key is used", () => {
+  assert.equal(parseUserShellFont(JSON.stringify({ font: { family: "Iosevka" } })), "Iosevka");
+});
+
+test("parseUserShellFont: missing key, missing font object, blank family, invalid JSON, or a non-string are all null", () => {
+  assert.equal(parseUserShellFont(JSON.stringify({})), null);
+  assert.equal(parseUserShellFont(JSON.stringify({ font: {} })), null);
+  assert.equal(parseUserShellFont(JSON.stringify({ font: { family: "  " } })), null);
+  assert.equal(parseUserShellFont(JSON.stringify({ font: { family: 12 } })), null);
+  assert.equal(parseUserShellFont("not json"), null);
+  assert.equal(parseUserShellFont(""), null);
+  assert.equal(parseUserShellFont(undefined), null);
+});
+
+test("parseThemeShellFont: a family key inside [font] is used", () => {
+  const toml = ['[bar]', 'background = "#161616"', '', '[font]', 'base-size = 12', 'family = "Iosevka"', '', '[popups]', 'family = "ignored"'].join("\n");
+  assert.equal(parseThemeShellFont(toml), "Iosevka");
+});
+
+test("parseThemeShellFont: a family key outside [font] is ignored; no [font] section at all is null", () => {
+  const toml = ['[bar]', 'family = "not this one"'].join("\n");
+  assert.equal(parseThemeShellFont(toml), null);
+  assert.equal(parseThemeShellFont(""), null);
+  assert.equal(parseThemeShellFont(undefined), null);
+});
+
+test("parseThemeShellFont: [font] with no family key at all is null", () => {
+  const toml = ['[font]', 'base-size = 12'].join("\n");
+  assert.equal(parseThemeShellFont(toml), null);
+});
+
+test("readHeaderFont: the user shell.json wins over the theme's shell.toml and the code font", () => {
+  const dir = scratchDir("omasnap-headerfont-user-");
+  try {
+    mkdirSync(join(dir, "home", ".config", "omarchy"), { recursive: true });
+    writeFileSync(join(dir, "home", ".config", "omarchy", "shell.json"), JSON.stringify({ font: { family: "UserFont" } }));
+    mkdirSync(join(dir, "theme"), { recursive: true });
+    writeFileSync(join(dir, "theme", "shell.toml"), '[font]\nfamily = "ThemeFont"\n');
+    const family = readHeaderFont({ themeDir: join(dir, "theme"), codeFontFamily: "CodeFont", homeDir: join(dir, "home") });
+    assert.equal(family, "UserFont");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("readHeaderFont: falls back to the theme's shell.toml when there is no user shell.json", () => {
+  const dir = scratchDir("omasnap-headerfont-theme-");
+  try {
+    mkdirSync(join(dir, "theme"), { recursive: true });
+    writeFileSync(join(dir, "theme", "shell.toml"), '[font]\nfamily = "ThemeFont"\n');
+    const family = readHeaderFont({ themeDir: join(dir, "theme"), codeFontFamily: "CodeFont", homeDir: join(dir, "home-does-not-exist") });
+    assert.equal(family, "ThemeFont");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("readHeaderFont: falls back to the code font when neither shell.json nor shell.toml set one", () => {
+  const dir = scratchDir("omasnap-headerfont-code-");
+  try {
+    mkdirSync(join(dir, "theme"), { recursive: true });
+    writeFileSync(join(dir, "theme", "shell.toml"), "# no [font] section\n");
+    const family = readHeaderFont({ themeDir: join(dir, "theme"), codeFontFamily: "CodeFont", homeDir: join(dir, "home-does-not-exist") });
+    assert.equal(family, "CodeFont");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("buildInput: without an explicit headerFont, one is still computed (falls back to the code font off this machine's real home)", () => {
+  const input = buildInput({ snap: HELLO, theme: GRUVBOX });
+  assert.equal(typeof input.headerFont, "string");
+  assert.ok(input.headerFont.length > 0);
+});
+
+test("buildInput: an explicit headerFont passes straight through", () => {
+  const input = buildInput({ snap: HELLO, theme: GRUVBOX, headerFont: "Iosevka" });
+  assert.equal(input.headerFont, "Iosevka");
+});
+
 // --- CLI -----------------------------------------------------------------
 
 test("CLI: prints valid JSON whose snap.lines.length matches the fixture", () => {
@@ -193,4 +303,10 @@ test("app/Snap.qml declares the same minWidth/maxWidth/minLines constants as lib
   assert.equal(Number(minWidth[1]), CONSTANTS.minWidth);
   assert.equal(Number(maxWidth[1]), CONSTANTS.maxWidth);
   assert.equal(Number(minLines[1]), CONSTANTS.minLines);
+});
+
+test("app/Snap.qml declares outerGapFactor and innerPadFactor as named constants (the Hyprland-gap-derived margins)", () => {
+  const qml = readFileSync(join(ROOT, "app", "Snap.qml"), "utf8");
+  assert.match(qml, /readonly property real\s+outerGapFactor:\s*\d/);
+  assert.match(qml, /readonly property real\s+innerPadFactor:\s*\d/);
 });

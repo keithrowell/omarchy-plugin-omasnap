@@ -11,7 +11,7 @@ and the preview window are otherwise untouched.
 |---|---|
 | `lib/hypr.mjs` (new) | `parseOptionJson`, `firstGradientColour`, `readHyprlandLook({ run, accent })` with fallbacks. |
 | `tests/hypr.test.mjs` (new) | Parsing against recorded `hyprctl` output; fallbacks; injectable runner. |
-| `lib/input.mjs` | `buildInput({ snap, theme, look, wallpaperOverride })` emits `look` in the JSON; the CLI reads the look; `editorStyle` passes `titleBarBackground`. |
+| `lib/input.mjs` | `buildInput({ snap, theme, look, headerFont, wallpaperOverride })` emits `look` and `headerFont` in the JSON; `parseUserShellFont`/`parseThemeShellFont`/`readHeaderFont` resolve the header's font family (amended 2026-09-06 — no `titleBarBackground` needed, the header has no coloured band). |
 | `lib/snap.mjs` | Both CLI paths call `readHyprlandLook` and pass `look` to `buildInput`. |
 | `app/Snap.qml` | The chrome: border, rounding, margins from `look`; maze glyph in the title bar; sharp wallpaper; wordmark, blur, overlay and (unless enabled) shadow removed; constants renamed. |
 | `app/Preview.qml` | Only if it references removed properties (`logoSettled`, `backdropPadding`); behaviour unchanged. |
@@ -97,40 +97,67 @@ export function readHyprlandLook({ run, accent } = {}) → { borderSize, roundin
 
 ### `app/Snap.qml`
 
-Constants block (rename/replace; every number stays a named constant):
+Constants block (every number a named `readonly property`; QML property
+names cannot start with an upper-case letter, so these are camelCase, not
+the `SCREAMING_CASE` first drafted here):
 
 ```
 readonly property int  exportScale: 2
-readonly property real OUTER_GAP_FACTOR: 3      // image edge → window border = gapsOut × this
-readonly property real INNER_PAD_FACTOR: 2      // border → code = gapsOut × this
-readonly property real titleBarFactor: 1.6      // title bar height = lineHeight × this (slim)
-readonly property real glyphFactor: 0.62        // maze glyph pixel size = titleBarHeight × this
+readonly property real outerGapFactor: 3        // image edge → window border = gapsOut × this
+readonly property real innerPadFactor: 2        // border → code = gapsOut × this
 readonly property int  minWidth: 480
 readonly property int  maxWidth: 1600
 readonly property int  minLines: 3
 readonly property int  gutterDigitsMin: 2
 readonly property string ellipsis: "…"
 readonly property string iconFontPath: "/usr/share/fonts/omarchy/omarchy.ttf"
-readonly property string mazeGlyph: ""
+readonly property string mazeGlyph: "<U+E900>"
 readonly property int  shadowRange: 12          // used only when look.shadowEnabled
 readonly property real shadowOpacity: 0.5
+
+// Header (amended 2026-09-06: a PanelHero/PanelSeparator-style header
+// replaces the coloured title bar — see the "Title bar" section below,
+// which this supersedes).
+readonly property real headerGlyphFactor: 2        // glyph pixel size = editorFontSize × this
+readonly property real headerGapFactor: 14         // gap after glyph, × S
+readonly property real headerSpacingFactor: 2      // title/subtitle row spacing, × S
+readonly property real headerTitleFactor: 1.167    // title pixel size = editorFontSize × this
+readonly property real headerCaptionFactor: 0.833  // subtitle pixel size = editorFontSize × this
+readonly property real headerCaptionSpacing: 1.2   // subtitle letter-spacing, literal px (not × S)
+readonly property real headerPaddingFactor: 18     // header's own padding, × S
+readonly property real separatorAlpha: 0.12        // separator line, foreground at this alpha
+readonly property real dimFactor: 1.4              // Qt.darker() factor for the subtitle colour
+readonly property int  baseFontSize: 12            // S = editorFontSize / this
+readonly property int  headerSeparatorHeight: 1    // literal 1px, like the shell's own rule
 ```
 
 Derived from `input.look` (with the defaults above when absent):
 `borderSize`, `rounding`, `gapsOut`, `outerMargin = round(gapsOut ×
-OUTER_GAP_FACTOR)`, `innerPad = round(gapsOut × INNER_PAD_FACTOR)`,
-`innerRounding = max(0, rounding - borderSize)`.
+outerGapFactor)`, `innerPad = round(gapsOut × innerPadFactor)`,
+`innerRounding = max(0, rounding - borderSize)`. Note: `borderSize`/
+`rounding` are used as plain logical-pixel values, **not** multiplied by
+`exportScale` — `exportScale` already scales the *entire* rendered item
+uniformly at `grabToImage()` time (see `Grab.js`), the same way `fontSize`
+and every other logical dimension here does; multiplying border/rounding by
+it too would double-scale them relative to everything else.
 
-- **`buildFrame()`**: `padding = innerPad` (was `lineHeight`);
-  `titleBarHeight = round(lineHeight × titleBarFactor)`; `winWidth/winHeight`
-  as now but with the new padding and **including** the border: the window
-  rectangle is `borderSize` larger on each side than the content. Item size
-  = window + `2 × outerMargin`.
+- **`buildFrame()`**: `padding = innerPad` (was `lineHeight`); header
+  geometry as below (`headerHeight` replaces the old `titleBarHeight`);
+  `winWidth/winHeight` as now but with the new padding and **including**
+  the border: `winHeight = 2 × borderSize + headerHeight + 2 × padding +
+  renderedLineCount × lineHeight`, i.e. the window rectangle is `borderSize`
+  larger on each side than the content. Item size = window + `2 ×
+  outerMargin`.
 - **Section 1, backdrop**: `Rectangle { color: darker_background }` then
-  `Image { source: wallpaper; fillMode: PreserveAspectCrop; sourceSize.width:
-  width × exportScale; smooth: true; asynchronous: false }` — **no blur, no
-  overlay**. Remove `MultiEffect` blur, `wallpaperSourceWidth`,
-  `blurStrength`, `blurMax`, `overlayOpacity`.
+  `Image { source: wallpaper; fillMode: PreserveAspectCrop; asynchronous: true }`
+  — **no blur, no overlay**, and no explicit `sourceSize` (the wallpaper is
+  no longer downsized for a cheap blur pass, so full decode resolution is
+  wanted anyway; `asynchronous: true` avoids blocking the render thread on
+  a large decode). Remove `MultiEffect` blur, `wallpaperSourceWidth`,
+  `blurStrength`, `blurMax`, `overlayOpacity`. See the renders' `README.md`'s
+  "Wallpaper substitution" note for why the flexoki-light evidence renders
+  use gruvbox's own wallpaper file (not a rendering bug — flexoki-light's
+  own wallpaper is near-flat where the window covers it).
 - **Section 2, window**: an outer `Rectangle` (`radius: rounding`,
   `color: look.activeBorder`) and, inset by `borderSize`, the content
   `Rectangle` (`radius: innerRounding`, `color: theme.editor.background`).
@@ -141,21 +168,48 @@ OUTER_GAP_FACTOR)`, `innerPad = round(gapsOut × INNER_PAD_FACTOR)`,
   (`shadowBlur` from `shadowRange`, colour `darker_background`); otherwise
   no effect item at all (do not leave a disabled MultiEffect wrapping the
   window — it costs a render pass).
-- **Title bar**: colour `theme.editor.titleBarBackground` (fallback
-  `colors.lighter_background`), height `titleBarHeight`, top corners
-  rounded with `innerRounding` via the existing two-rectangle trick.
-  Left: the maze glyph — `FontLoader { source: "file://" + iconFontPath }`;
-  `Text { text: mazeGlyph; font.family: iconFont.name; font.pixelSize:
-  round(titleBarHeight × glyphFactor); color: colors.accent; visible:
-  iconFont.status === FontLoader.Ready && fontInfo.family === iconFont.name
-  }`, `x: innerPad`, vertically centred. Fallback: when the FontLoader
-  errors, an `Image { source: "file://" + HOME + "/.local/share/omarchy/icon.png";
-  height: glyph size; fillMode: PreserveAspectFit; visible: false }` +
-  `ColorOverlay { color: accent }` (Qt5Compat is already imported); if
-  that image errors too, nothing. Centre: the filename/language `Text` as
-  now (`textFormat: Text.PlainText` stays). Nothing else in the bar.
+- **Header** (amended 2026-09-06, replacing this section's original "Title
+  bar" — Keith pointed at the Omarchy shell's `PanelHero` + `PanelSeparator`
+  pattern, `/usr/share/omarchy/shell/Ui/{PanelHero,PanelSeparator}.qml, as
+  the reference instead of a coloured title-bar band). On the **same
+  background as the code** (`theme.editor.background`, via `windowContent`
+  — no separate coloured `Rectangle`):
+  - `S = editorFontSize / baseFontSize`.
+  - Left: the maze glyph — `FontLoader { source: "file://" + iconFontPath }`;
+    `Text { text: mazeGlyph; font.family: iconFont.name; font.pixelSize:
+    round(editorFontSize × headerGlyphFactor); color: colors.accent; visible:
+    iconFont.status === FontLoader.Ready && fontInfo.family === iconFont.name
+    }`, at `(headerPadding, headerPadding + (heroHeight - glyphSize) / 2)`.
+    Fallback: when the font errors (or fails the `fontInfo` check), an
+    `Image { source: "file://" + HOME + "/.local/share/omarchy/icon.png";
+    visible: false }` + `ColorOverlay { color: accent }` (Qt5Compat is
+    already imported); if that image errors too, nothing.
+  - Right of the glyph, gap `headerGapFactor × S`: a `Column` (spacing
+    `headerSpacingFactor × S`) of **title** (`filename ?? language ?? "snippet"`,
+    `foreground`, bold, `round(editorFontSize × headerTitleFactor)`, elide
+    right) and **subtitle** (`[sourceLabel, languageLabel].filter(Boolean).join(" · ")`
+    where `sourceLabel` is `"ZED"`/`"VS CODE"`/omitted-for-`"other"`, and
+    `languageLabel` is `language.toUpperCase()` or `"PLAIN TEXT"` when
+    `null`; colour `Qt.darker(foreground, dimFactor)`, bold,
+    `round(editorFontSize × headerCaptionFactor)`, `font.letterSpacing:
+    headerCaptionSpacing`). Each row's height is a local `headerLineHeightRatio
+    (1.2)` × its pixel size — a typographic approximation for the row's own
+    line box, deliberately distinct from the code area's per-editor
+    `lineHeightFactor`.
+  - `headerPadding = round(headerPaddingFactor × S)` on every side of the
+    hero row (glyph + column); then a **separator** — `Rectangle { height:
+    headerSeparatorHeight (literal 1px); width: contentWidth; color:
+    Qt.rgba(foreground.r, foreground.g, foreground.b, separatorAlpha) }`
+    spanning the full content width (not inset by `headerPadding`) — then
+    the code area with its existing `innerPad`.
+  - `heroHeight = max(glyphSize, titleLineHeight + headerSpacing +
+    captionLineHeight)`; `headerHeight = 2 × headerPadding + heroHeight +
+    headerSeparatorHeight`.
+  - Header font family = `input.headerFont` (see `lib/input.mjs` above),
+    falling back to the code font.
 - **Gutter and code**: unchanged, positioned inside the content rectangle
-  at `borderSize + innerPad`.
+  at `borderSize + innerPad`, `y` offset by `headerHeight + innerPad`
+  (`headerHeight` replaces the old `titleBarHeight` here).
 - **Remove**: section 3 (mark), `logoImage`, `ColorOverlay` for the logo,
   `logoAspectRatio`, `markHeight`, `markMargin`, `logoSettled`;
   `ready = frame !== null && wallpaperSettled && (iconFont.status !==
@@ -191,8 +245,10 @@ puts it in the JSON; without one and with `readHyprlandLook` failing
 (inject via an env/param — simplest: `buildInput` accepts `look` and the
 test always passes one; the CLI path is covered by running
 `node lib/input.mjs` and asserting `look` has the six keys); constants
-check now asserts `OUTER_GAP_FACTOR`, `INNER_PAD_FACTOR`, `minWidth`,
-`maxWidth`, `minLines` appear in `Snap.qml`.
+check now asserts `outerGapFactor`, `innerPadFactor`, `minWidth`,
+`maxWidth`, `minLines` appear in `Snap.qml`; also covers `lib/input.mjs`'s
+`headerFont` field and its `parseUserShellFont`/`parseThemeShellFont`/
+`readHeaderFont` helpers (see the "header" amendment above).
 
 `tests/snap.test.mjs`: the script-level tests still pass (the fake
 `hyprctl` there only answers `activewindow -j`; make the fake answer

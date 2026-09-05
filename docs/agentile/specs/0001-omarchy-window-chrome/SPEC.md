@@ -55,7 +55,7 @@ shows top-left. Make the window that.
 - Not running under Hyprland (fixture renders in CI, or another compositor): fallbacks apply, render still completes.
 - `col.active_border` set to a multi-stop gradient: use the first stop; do not attempt to draw the gradient.
 - Rounding 0: square corners, no anti-aliasing artefacts on the border.
-- Light themes: the border must still be the accent, the title bar the theme's title-bar colour; verify with the contrasting fixture.
+- Light themes: the border must still be the accent, the header the same background as the code area (no coloured band); verify with the contrasting fixture.
 - Tab and icon fonts: the maze glyph must not fall back to a tofu box — check `Text.fontInfo` (or `FontLoader.status`) before drawing.
 
 ## Affected areas
@@ -68,4 +68,4 @@ None. The margin factors are a starting judgement; Keith tunes them by eye after
 
 ## Verification
 
-`node --test tests/*.test.mjs`; the reviewer renders both fixtures under two themes with `bin/omasnap --fixture`, opens them beside the theme's `preview.png`, and checks: border width and colour match, corner radius matches, no shadow, sharp wallpaper, maze glyph top-left in accent, no wordmark, filename centred.
+`node --test tests/*.test.mjs`; the reviewer renders both fixtures under two themes with `bin/omasnap --fixture`, opens them beside the theme's `preview.png`, and checks: border width and colour match, corner radius matches, no shadow, sharp wallpaper, maze glyph top-left in accent, no wordmark, filename and source/language in the header.

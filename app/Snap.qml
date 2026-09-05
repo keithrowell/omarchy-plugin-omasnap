@@ -1,18 +1,28 @@
 import QtQuick
 import QtQuick.Effects
 import Qt5Compat.GraphicalEffects
+import Quickshell
 
-// The frame: backdrop (blurred wallpaper) -> shadow -> window (title bar,
-// line-number gutter, code). Renders one `input` document — the JSON built
-// by `lib/input.mjs` from a fixture (or, from spec 0006, a live selection)
-// plus the current Omarchy theme — set once by `Main.qml`'s render mode.
-// Every colour below comes from `input.theme`; nothing is a literal.
+// The frame: sharp-wallpaper backdrop -> window (Hyprland-style border and
+// rounding, no shadow unless the desktop has one) -> header (Omarchy maze
+// glyph + filename/source, on the same background as the code) -> gutter ->
+// code. Renders one `input` document — the JSON built by `lib/input.mjs`
+// from a fixture (or, from spec 0006, a live selection) plus the current
+// Omarchy theme and this desktop's live Hyprland "look" (border size,
+// rounding, gaps, active-border colour, shadow — see `lib/hypr.mjs`) — set
+// once by `Main.qml`'s render mode.
+//
+// Every colour below comes from `input.theme` or `input.look`; nothing is a
+// literal (the font path and the maze glyph's codepoint are the only
+// literals in the chrome — see the constants block).
 //
 // Sizing follows content (see `buildFrame()`): the window is as wide as its
 // longest line, clamped to [minWidth, maxWidth] with over-width lines
-// clipped to an ellipsis, and as tall as its line count (at least
-// `minLines`). This item's own size is that window plus `backdropPadding`
-// on every side, which is what `Main.qml` grabs to a PNG.
+// clipped to an ellipsis, and as tall as its header plus its line count (at
+// least `minLines`). This item's own size is that window plus `outerMargin`
+// on every side (Hyprland's own `gaps_out`, scaled up — a window sitting in
+// the middle of a tiled desktop has more breathing room around it than the
+// gap between two tiles), which is what `Main.qml` grabs to a PNG.
 //
 // `frame` is a single plain property holding everything the visual tree
 // below reads (colours, font, geometry): it is (re)built once, atomically,
@@ -44,48 +54,73 @@ Item {
 
     // --- Named constants (every size/radius/opacity below is one of these; nothing inline) ---
     readonly property int exportScale: 2
-    readonly property int windowRadius: 14
-    readonly property int backdropPadding: 72
+    // Outer margin (image edge -> window border) and inner padding (border
+    // -> code) are both multiples of Hyprland's own `general:gaps_out`, so
+    // a wider desktop gap setting widens this window's own margins too.
+    readonly property real outerGapFactor: 3
+    readonly property real innerPadFactor: 2
     readonly property int minWidth: 480
     readonly property int maxWidth: 1600
     readonly property int minLines: 3
-    readonly property real blurStrength: 1.0
-    readonly property int blurMax: 64
-    // The backdrop is blurred anyway; a small decode source keeps MultiEffect cheap.
-    readonly property int wallpaperSourceWidth: 960
-    readonly property real overlayOpacity: 0.4
-    readonly property int shadowOffsetY: 18
-    readonly property real shadowBlur: 1.0
-    readonly property real shadowOpacity: 0.55
     readonly property int gutterDigitsMin: 2
     readonly property string ellipsis: "…"
-    // assets/omarchy-logo.svg's own viewBox (1215x285) — the wordmark's fixed aspect ratio.
-    readonly property real logoAspectRatio: 1215 / 285
-    // A safe, arbitrary size for the mark before `frame` exists.
-    readonly property int defaultTitleBarHeight: 26
+    readonly property string iconFontPath: "/usr/share/fonts/omarchy/omarchy.ttf"
+    // The Omarchy maze mark, first glyph (U+E900) of the vendored `omarchy`
+    // icon font's private-use range (confirmed present via `fc-scan
+    // --format '%{charset}\n'`, which reports `e900-e909`) — verified at
+    // render time by checking `fontInfo.family` below, not just assuming it.
+    readonly property string mazeGlyph: ""
+    // Only used when `look.shadowEnabled` (Hyprland's own default is off;
+    // most Omarchy desktops never draw this at all).
+    readonly property real shadowRange: 12
+    readonly property real shadowOpacity: 0.5
 
-    readonly property int markHeight: frame ? frame.titleBarHeight : defaultTitleBarHeight
-    // The mark sits below the window, vertically centred in the empty
-    // `backdropPadding` strip between the window's bottom edge and the
-    // canvas edge (the mark is wider than `backdropPadding` at this aspect
-    // ratio, so it cannot also fit beside the window on the right without
-    // overlapping it — see the mark's own comment below).
-    readonly property int markMargin: Math.max(0, Math.round((backdropPadding - markHeight) / 2))
+    // --- Header constants (the shell's PanelHero + PanelSeparator pattern —
+    // see /usr/share/omarchy/shell/Ui/{PanelHero,PanelSeparator}.qml, which
+    // this mirrors on the code's own font size instead of the shell's) ---
+    readonly property real headerGlyphFactor: 2
+    readonly property real headerGapFactor: 14
+    readonly property real headerSpacingFactor: 2
+    readonly property real headerTitleFactor: 1.167
+    readonly property real headerCaptionFactor: 0.833
+    readonly property real headerCaptionSpacing: 1.2
+    readonly property real headerPaddingFactor: 18
+    readonly property real separatorAlpha: 0.12
+    readonly property real dimFactor: 1.4
+    readonly property int baseFontSize: 12
+    // The separator itself is a literal 1px rule (not scaled by S), same as
+    // the shell's own `PanelSeparator`.
+    readonly property int headerSeparatorHeight: 1
+
+    // A safe, arbitrary size for the window before `frame` exists.
+    readonly property int defaultHeaderHeight: 64
+    readonly property int defaultOuterMargin: 30
+
+    // Mirrors `lib/hypr.mjs`'s `OMARCHY_DEFAULTS` — QML cannot import that
+    // module (it uses `node:child_process`), so these three are duplicated
+    // here as named constants; `buildInput` always supplies a full `look`
+    // in practice, so these only matter for a hand-built fixture that omits
+    // it entirely.
+    readonly property int lookDefaultBorderSize: 2
+    readonly property int lookDefaultRounding: 0
+    readonly property int lookDefaultGapsOut: 10
 
     // --- The one atomic snapshot the whole visual tree reads (see the header comment) ---
     property var frame: null
     onInputChanged: frame = input ? buildFrame(input) : null
 
     readonly property int winWidth: frame ? frame.winWidth : minWidth
-    readonly property int winHeight: frame ? frame.winHeight : defaultTitleBarHeight * 2 + minLines * 20
+    readonly property int winHeight: frame ? frame.winHeight : defaultHeaderHeight + minLines * 20
+    readonly property int outerMargin: frame ? frame.outerMargin : defaultOuterMargin
 
-    width: winWidth + 2 * backdropPadding
-    height: winHeight + 2 * backdropPadding
+    width: winWidth + 2 * outerMargin
+    height: winHeight + 2 * outerMargin
 
     readonly property bool wallpaperSettled: !frame || !frame.wallpaper
         || wallpaperImage.status === Image.Ready || wallpaperImage.status === Image.Error
-    readonly property bool logoSettled: logoImage.status === Image.Ready || logoImage.status === Image.Error
-    readonly property bool ready: frame !== null && wallpaperSettled && logoSettled
+    // A font that fails to load must not block the grab — only "still
+    // loading" does; "error" just means the fallback icon (or nothing) draws.
+    readonly property bool ready: frame !== null && wallpaperSettled && iconFont.status !== FontLoader.Loading
 
     function clamp(value, lo, hi) {
         return Math.max(lo, Math.min(hi, value));
@@ -124,13 +159,58 @@ Item {
         const snapData = inputData.snap;
         const colors = inputData.theme.colors;
         const editor = inputData.theme.editor;
+        const look = inputData.look || {};
         const fontFamily = snapData.font.family;
         const fontSize = snapData.font.size;
+        const headerFontFamily = inputData.headerFont || fontFamily;
         // Zed's "comfortable" line height, VS Code's default, a generic middle ground.
         const lineHeightFactor = snapData.editor === "zed" ? 1.618 : snapData.editor === "vscode" ? 1.35 : 1.5;
         const lineHeight = Math.round(fontSize * lineHeightFactor);
-        const padding = lineHeight;
-        const titleBarHeight = Math.round(lineHeight * 2);
+
+        // Hyprland's own chrome (see lib/hypr.mjs). `buildInput` always
+        // supplies all six `look` fields (live or Omarchy's own defaults);
+        // these per-key fallbacks only matter for a hand-built fixture that
+        // omits `look` altogether.
+        const borderSize = typeof look.borderSize === "number" ? look.borderSize : lookDefaultBorderSize;
+        const rounding = typeof look.rounding === "number" ? look.rounding : lookDefaultRounding;
+        const gapsOut = typeof look.gapsOut === "number" ? look.gapsOut : lookDefaultGapsOut;
+        const activeBorder = look.activeBorder || colors.accent;
+        const shadowEnabled = look.shadowEnabled === true;
+        // Hyprland draws a window's content corner radius as
+        // `rounding - border_size` (clamped at 0); the nested-rectangle
+        // border below reproduces that exactly.
+        const innerRounding = Math.max(0, rounding - borderSize);
+
+        const outerMargin = Math.round(gapsOut * outerGapFactor);
+        const padding = Math.round(gapsOut * innerPadFactor);
+
+        // --- Header geometry (see the constants block's comment) ---
+        const S = fontSize / baseFontSize;
+        const headerPadding = Math.round(headerPaddingFactor * S);
+        const headerGap = Math.round(headerGapFactor * S);
+        const headerSpacing = Math.round(headerSpacingFactor * S);
+        const glyphSize = Math.round(fontSize * headerGlyphFactor);
+        const titleSize = Math.round(fontSize * headerTitleFactor);
+        const captionSize = Math.round(fontSize * headerCaptionFactor);
+        // A text row's actual ink (ascent + descent) runs somewhat taller
+        // than its nominal pixel size; 1.2x is a common typographic
+        // approximation for a label's own line box — deliberately not the
+        // code area's `lineHeightFactor` above, which is tuned for reading
+        // code, not sizing a two-line header.
+        const headerLineHeightRatio = 1.2;
+        const titleLineHeight = Math.round(titleSize * headerLineHeightRatio);
+        const captionLineHeight = Math.round(captionSize * headerLineHeightRatio);
+        const heroColumnHeight = titleLineHeight + headerSpacing + captionLineHeight;
+        const heroHeight = Math.max(glyphSize, heroColumnHeight);
+        const headerHeight = 2 * headerPadding + heroHeight + headerSeparatorHeight;
+
+        const title = snapData.filename || snapData.language || "snippet";
+        // "ZED · JAVASCRIPT", "VS CODE · PYTHON", "PLAIN TEXT" (source
+        // omitted for "other", language "PLAIN TEXT" when null) — see the
+        // spec's amended header criterion for the exact mapping.
+        const sourceLabel = snapData.editor === "zed" ? "ZED" : snapData.editor === "vscode" ? "VS CODE" : null;
+        const languageLabel = snapData.language ? String(snapData.language).toUpperCase() : "PLAIN TEXT";
+        const subtitle = [sourceLabel, languageLabel].filter(Boolean).join(" · ");
 
         const lineCount = snapData.lines.length;
         const renderedLineCount = Math.max(lineCount, minLines);
@@ -167,20 +247,43 @@ Item {
 
         const codeWidth = Math.min(longest, maxCodeWidth);
 
+        const contentWidth = clamp(gutterWidth + codeWidth + 2 * padding, minWidth, maxWidth);
+        const contentHeight = headerHeight + 2 * padding + renderedLineCount * lineHeight;
+
         return {
             filename: snapData.filename,
             language: snapData.language,
             fontFamily: fontFamily,
             fontSize: fontSize,
+            headerFontFamily: headerFontFamily,
             lineHeight: lineHeight,
             padding: padding,
-            titleBarHeight: titleBarHeight,
             lines: outLines,
             renderedLineCount: renderedLineCount,
             gutterWidth: gutterWidth,
             charAdvance: charAdvance,
-            winWidth: clamp(gutterWidth + codeWidth + 2 * padding, minWidth, maxWidth),
-            winHeight: titleBarHeight + 2 * padding + renderedLineCount * lineHeight,
+            borderSize: borderSize,
+            rounding: rounding,
+            innerRounding: innerRounding,
+            activeBorder: activeBorder,
+            shadowEnabled: shadowEnabled,
+            outerMargin: outerMargin,
+            contentWidth: contentWidth,
+            contentHeight: contentHeight,
+            winWidth: contentWidth + 2 * borderSize,
+            winHeight: contentHeight + 2 * borderSize,
+            headerPadding: headerPadding,
+            headerGap: headerGap,
+            headerSpacing: headerSpacing,
+            glyphSize: glyphSize,
+            titleSize: titleSize,
+            captionSize: captionSize,
+            titleLineHeight: titleLineHeight,
+            captionLineHeight: captionLineHeight,
+            heroHeight: heroHeight,
+            headerHeight: headerHeight,
+            title: title,
+            subtitle: subtitle,
             colors: colors,
             editorBackground: editor.background,
             lineNumberColor: editor.lineNumber,
@@ -197,7 +300,25 @@ Item {
         text: "0"
     }
 
-    // --- 1. Backdrop -----------------------------------------------------
+    // A real `color`-typed property so `Qt.darker`/`Qt.rgba` below operate
+    // on an actual QColor (auto-coerced from the theme's hex string here)
+    // rather than a plain JS string.
+    QtObject {
+        id: colorHelper
+        property color foreground: frame ? frame.colors.foreground : Qt.rgba(0, 0, 0, 1)
+    }
+
+    // The maze glyph's font: loaded once, independent of `frame`, so its
+    // `status` is stable across every re-render (a live theme switch never
+    // touches the font file). `fontInfo.family` on `glyphText` below is
+    // what actually proves the glyph is drawing from this font and not a
+    // tofu-box substitute — `status === Ready` only means the file parsed.
+    FontLoader {
+        id: iconFont
+        source: "file://" + iconFontPath
+    }
+
+    // --- 1. Backdrop: the sharp wallpaper, no blur, no darkening overlay ---
     Rectangle {
         id: backdropBase
         anchors.fill: parent
@@ -207,42 +328,38 @@ Item {
     Image {
         id: wallpaperImage
         anchors.fill: parent
-        visible: false
-        asynchronous: false
+        asynchronous: true
         source: frame && frame.wallpaper ? "file://" + frame.wallpaper : ""
         fillMode: Image.PreserveAspectCrop
-        sourceSize.width: wallpaperSourceWidth
     }
 
-    MultiEffect {
-        id: wallpaperBlur
-        anchors.fill: parent
-        source: wallpaperImage
-        visible: frame && frame.wallpaper && wallpaperImage.status === Image.Ready
-        blurEnabled: true
-        blur: blurStrength
-        blurMax: blurMax
-        autoPaddingEnabled: false
-    }
-
-    Rectangle {
-        id: backdropOverlay
-        anchors.fill: parent
-        color: frame ? frame.colors.darker_background : Qt.rgba(0, 0, 0, 1)
-        opacity: overlayOpacity
-    }
-
-    // --- 2. Window, centred with backdropPadding on every side -----------
-    MultiEffect {
-        id: windowShadow
+    // --- 2. Window: Hyprland's own border + rounding, shadow only if the desktop has one ---
+    Loader {
+        active: frame ? frame.shadowEnabled : false
         anchors.fill: win
-        source: win
-        shadowEnabled: true
-        shadowColor: frame ? frame.colors.darker_background : Qt.rgba(0, 0, 0, 1)
-        shadowBlur: root.shadowBlur
-        shadowOpacity: root.shadowOpacity
-        shadowVerticalOffset: shadowOffsetY
-        autoPaddingEnabled: true
+        sourceComponent: Component {
+            MultiEffect {
+                // `parent` here is the `Loader` itself, already sized to
+                // `win` by the outer `anchors.fill: win` above — `win` is
+                // neither this item's parent nor a sibling (it's a
+                // sibling of the *Loader*, one level up), so anchoring
+                // straight to it logged "Cannot anchor to an item that
+                // isn't a parent or sibling" on every shadow-enabled run.
+                anchors.fill: parent
+                source: win
+                shadowEnabled: true
+                shadowColor: frame ? frame.colors.darker_background : Qt.rgba(0, 0, 0, 1)
+                // `shadowBlur` is a 0..1 fraction of `blurMax` (the blur
+                // radius in px), not a radius itself — passing `shadowRange`
+                // (12) straight into `shadowBlur` clamped to ~1.0 and drew
+                // no visible shadow at all. `blurMax` is Hyprland's own
+                // shadow range; `shadowBlur: 1.0` uses the full amount.
+                blurMax: shadowRange
+                shadowBlur: 1.0
+                shadowOpacity: root.shadowOpacity
+                autoPaddingEnabled: true
+            }
+        }
     }
 
     Item {
@@ -251,145 +368,179 @@ Item {
         width: winWidth
         height: winHeight
 
+        // The border ring: Hyprland draws `border_size` px of `activeBorder`
+        // outside the content at the configured `rounding`; a full-size
+        // rectangle behind an inset content rectangle reproduces that
+        // exactly, with no `border.width` anti-aliasing seam at rounding 0.
         Rectangle {
-            id: windowBase
+            id: windowBorder
             anchors.fill: parent
-            radius: windowRadius
+            radius: frame ? frame.rounding : 0
+            color: frame ? frame.activeBorder : Qt.rgba(0, 0, 0, 1)
+            antialiasing: true
+        }
+
+        Rectangle {
+            id: windowContent
+            x: frame ? frame.borderSize : 0
+            y: frame ? frame.borderSize : 0
+            width: frame ? frame.contentWidth : parent.width
+            height: frame ? frame.contentHeight : parent.height
+            radius: frame ? frame.innerRounding : 0
             color: frame ? frame.editorBackground : Qt.rgba(0, 0, 0, 1)
-        }
+            antialiasing: true
 
-        // Rounded top corners only: a fully-rounded rect plus a square patch
-        // over its bottom half (avoids a layer + OpacityMask for one shape).
-        Rectangle {
-            id: titleBar
-            width: parent.width
-            height: frame ? frame.titleBarHeight : defaultTitleBarHeight
-            radius: windowRadius
-            color: frame ? frame.colors.lighter_background : Qt.rgba(0, 0, 0, 1)
-        }
-        Rectangle {
-            x: 0
-            y: titleBar.height / 2
-            width: parent.width
-            height: titleBar.height / 2
-            color: frame ? frame.colors.lighter_background : Qt.rgba(0, 0, 0, 1)
-        }
+            // --- Header: PanelHero-style (glyph + title/subtitle), no coloured band ---
+            Text {
+                id: glyphText
+                text: mazeGlyph
+                visible: frame !== null && iconFont.status === FontLoader.Ready && fontInfo.family === iconFont.name
+                color: frame ? frame.colors.accent : Qt.rgba(0, 0, 0, 1)
+                font.family: iconFont.name
+                font.pixelSize: frame ? frame.glyphSize : 24
+                x: frame ? frame.headerPadding : 0
+                y: frame ? frame.headerPadding + (frame.heroHeight - frame.glyphSize) / 2 : 0
+            }
 
-        Text {
-            anchors.centerIn: titleBar
-            text: frame ? (frame.filename || frame.language || "snippet") : ""
-            // filename/language come straight from the input JSON (ultimately
-            // the selection's filename); without this, an HTML-looking
-            // filename like "<b>x</b>.rs" renders as markup instead of text.
-            textFormat: Text.PlainText
-            color: frame ? frame.colors.foreground : Qt.rgba(0, 0, 0, 1)
-            font.family: frame ? frame.fontFamily : "monospace"
-            font.pixelSize: frame ? frame.fontSize : 13
-        }
+            // Fallback: the font failed to load (or produced tofu) — a
+            // themed-accent icon.png instead; if that is missing too,
+            // `ColorOverlay.visible` below just never turns true and
+            // nothing draws there at all.
+            Image {
+                id: fallbackIconImage
+                visible: false
+                source: frame !== null && (iconFont.status === FontLoader.Error || !glyphText.visible)
+                    ? "file://" + Quickshell.env("HOME") + "/.local/share/omarchy/icon.png" : ""
+                asynchronous: false
+                fillMode: Image.PreserveAspectFit
+                x: frame ? frame.headerPadding : 0
+                y: frame ? frame.headerPadding + (frame.heroHeight - frame.glyphSize) / 2 : 0
+                width: frame ? frame.glyphSize : 24
+                height: frame ? frame.glyphSize : 24
+                sourceSize.width: frame ? frame.glyphSize * exportScale : 24
+                sourceSize.height: frame ? frame.glyphSize * exportScale : 24
+            }
 
-        // Gutter: right-aligned line numbers starting at 1, one per rendered
-        // line (including the padded blank lines when lines < minLines).
-        Column {
-            id: gutterColumn
-            x: frame ? frame.padding : 0
-            y: frame ? frame.titleBarHeight + frame.padding : 0
-            width: frame ? frame.gutterWidth - frame.charAdvance : 0
-            spacing: 0
-            Repeater {
-                model: frame ? frame.renderedLineCount : 0
-                delegate: Text {
-                    required property int index
-                    width: gutterColumn.width
-                    height: frame.lineHeight
-                    horizontalAlignment: Text.AlignRight
+            ColorOverlay {
+                anchors.fill: fallbackIconImage
+                source: fallbackIconImage
+                visible: fallbackIconImage.status === Image.Ready
+                color: frame ? frame.colors.accent : Qt.rgba(0, 0, 0, 1)
+            }
+
+            Column {
+                id: headerColumn
+                x: frame ? frame.headerPadding + frame.glyphSize + frame.headerGap : 0
+                y: frame ? frame.headerPadding + (frame.heroHeight - (frame.titleLineHeight + frame.headerSpacing + frame.captionLineHeight)) / 2 : 0
+                width: frame ? Math.max(0, frame.contentWidth - 2 * frame.headerPadding - frame.glyphSize - frame.headerGap) : 0
+                spacing: frame ? frame.headerSpacing : 0
+
+                Text {
+                    id: titleText
+                    width: headerColumn.width
+                    height: frame ? frame.titleLineHeight : 0
                     verticalAlignment: Text.AlignVCenter
-                    text: String(index + 1)
-                    color: frame.lineNumberColor
-                    font.family: frame.fontFamily
-                    font.pixelSize: frame.fontSize
+                    text: frame ? frame.title : ""
+                    textFormat: Text.PlainText
+                    elide: Text.ElideRight
+                    color: frame ? frame.colors.foreground : Qt.rgba(0, 0, 0, 1)
+                    font.family: frame ? frame.headerFontFamily : "monospace"
+                    font.pixelSize: frame ? frame.titleSize : 15
+                    font.bold: true
+                }
+
+                Text {
+                    id: subtitleText
+                    width: headerColumn.width
+                    height: frame ? frame.captionLineHeight : 0
+                    verticalAlignment: Text.AlignVCenter
+                    visible: text !== ""
+                    text: frame ? frame.subtitle : ""
+                    textFormat: Text.PlainText
+                    elide: Text.ElideRight
+                    color: Qt.darker(colorHelper.foreground, dimFactor)
+                    font.family: frame ? frame.headerFontFamily : "monospace"
+                    font.pixelSize: frame ? frame.captionSize : 11
+                    font.bold: true
+                    font.letterSpacing: headerCaptionSpacing
                 }
             }
-        }
 
-        // Code: a column of rows, each a row of styled spans.
-        Column {
-            id: codeColumn
-            x: frame ? frame.padding + frame.gutterWidth : 0
-            y: frame ? frame.titleBarHeight + frame.padding : 0
-            width: frame ? parent.width - 2 * frame.padding - frame.gutterWidth : 0
-            spacing: 0
-            Repeater {
-                model: frame ? frame.renderedLineCount : 0
-                // A plain `Item`, not a `Row`, as the per-line delegate: a
-                // `Row` whose only child `Text` has an empty string (a blank
-                // source line) collapses to zero height in the parent
-                // `Column` even with an explicit `height` set on the `Row`
-                // itself (confirmed with a five-line repro — every blank
-                // line vanished and the following lines shifted up to fill
-                // the gap). `Item` does not have that behaviour.
-                delegate: Item {
-                    required property int index
-                    width: codeColumn.width
-                    height: frame.lineHeight
-                    Row {
-                        anchors.verticalCenter: parent.verticalCenter
-                        Repeater {
-                            model: index < frame.lines.length ? frame.lines[index] : []
-                            delegate: Text {
-                                required property var modelData
-                                text: modelData.text
-                                color: modelData.color
-                                height: frame.lineHeight
-                                verticalAlignment: Text.AlignVCenter
-                                textFormat: Text.PlainText
-                                font.family: frame.fontFamily
-                                font.pixelSize: frame.fontSize
-                                font.italic: modelData.fontStyle === "italic"
-                                font.weight: modelData.fontWeight ? modelData.fontWeight : Font.Normal
+            // 1px full-content-width divider between the header and the code.
+            Rectangle {
+                id: headerSeparator
+                x: 0
+                y: frame ? frame.headerPadding + frame.heroHeight + frame.headerPadding : 0
+                width: frame ? frame.contentWidth : 0
+                height: headerSeparatorHeight
+                color: Qt.rgba(colorHelper.foreground.r, colorHelper.foreground.g, colorHelper.foreground.b, separatorAlpha)
+            }
+
+            // Gutter: right-aligned line numbers starting at 1, one per rendered
+            // line (including the padded blank lines when lines < minLines).
+            Column {
+                id: gutterColumn
+                x: frame ? frame.padding : 0
+                y: frame ? frame.headerHeight + frame.padding : 0
+                width: frame ? frame.gutterWidth - frame.charAdvance : 0
+                spacing: 0
+                Repeater {
+                    model: frame ? frame.renderedLineCount : 0
+                    delegate: Text {
+                        required property int index
+                        width: gutterColumn.width
+                        height: frame.lineHeight
+                        horizontalAlignment: Text.AlignRight
+                        verticalAlignment: Text.AlignVCenter
+                        text: String(index + 1)
+                        color: frame.lineNumberColor
+                        font.family: frame.fontFamily
+                        font.pixelSize: frame.fontSize
+                    }
+                }
+            }
+
+            // Code: a column of rows, each a row of styled spans.
+            Column {
+                id: codeColumn
+                x: frame ? frame.padding + frame.gutterWidth : 0
+                y: frame ? frame.headerHeight + frame.padding : 0
+                width: frame ? parent.width - 2 * frame.padding - frame.gutterWidth : 0
+                spacing: 0
+                Repeater {
+                    model: frame ? frame.renderedLineCount : 0
+                    // A plain `Item`, not a `Row`, as the per-line delegate: a
+                    // `Row` whose only child `Text` has an empty string (a blank
+                    // source line) collapses to zero height in the parent
+                    // `Column` even with an explicit `height` set on the `Row`
+                    // itself (confirmed with a five-line repro — every blank
+                    // line vanished and the following lines shifted up to fill
+                    // the gap). `Item` does not have that behaviour.
+                    delegate: Item {
+                        required property int index
+                        width: codeColumn.width
+                        height: frame.lineHeight
+                        Row {
+                            anchors.verticalCenter: parent.verticalCenter
+                            Repeater {
+                                model: index < frame.lines.length ? frame.lines[index] : []
+                                delegate: Text {
+                                    required property var modelData
+                                    text: modelData.text
+                                    color: modelData.color
+                                    height: frame.lineHeight
+                                    verticalAlignment: Text.AlignVCenter
+                                    textFormat: Text.PlainText
+                                    font.family: frame.fontFamily
+                                    font.pixelSize: frame.fontSize
+                                    font.italic: modelData.fontStyle === "italic"
+                                    font.weight: modelData.fontWeight ? modelData.fontWeight : Font.Normal
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
-
-    // --- 3. Omarchy mark, bottom-right, painted last -----------------------
-    // On top of the window/shadow (not the backdrop layer just below them):
-    // the shadow's `autoPaddingEnabled` spread can otherwise extend into
-    // this corner and paint over it. Anchored *below* the window (not to the
-    // canvas corner with the same `backdropPadding` the window itself is
-    // inset by) because the mark, at this aspect ratio, is wider than
-    // `backdropPadding` and would otherwise overlap the window rather than
-    // sit beside it. The vendored SVG (assets/omarchy-logo.svg) is the
-    // "omarchy" wordmark itself (seven letterform paths, no separate glyph
-    // run), so there is no additional muted "omarchy" Text beside it.
-    //
-    // Recolouring uses `Qt5Compat.GraphicalEffects.ColorOverlay`, not
-    // `QtQuick.Effects.MultiEffect`'s `colorization`: the SVG's paths are
-    // solid black, and `MultiEffect.colorization` blends *toward* a tint by
-    // multiplying the source's own luminance, so a zero-luminance (black)
-    // source stays black at any `colorization` value (confirmed with a
-    // three-line repro) — `ColorOverlay` replaces colour outright,
-    // preserving only alpha, which is what a flat theme-coloured mark needs.
-    Image {
-        id: logoImage
-        visible: false
-        source: Qt.resolvedUrl("assets/omarchy-logo.svg")
-        height: markHeight
-        width: markHeight * logoAspectRatio
-        sourceSize.height: markHeight * exportScale
-        sourceSize.width: markHeight * exportScale * logoAspectRatio
-        fillMode: Image.PreserveAspectFit
-        anchors.top: win.bottom
-        anchors.right: parent.right
-        anchors.topMargin: markMargin
-        anchors.rightMargin: markMargin
-    }
-
-    ColorOverlay {
-        anchors.fill: logoImage
-        source: logoImage
-        color: frame ? frame.colors.accent : Qt.rgba(0, 0, 0, 1)
     }
 }

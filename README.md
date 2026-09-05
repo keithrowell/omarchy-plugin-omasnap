@@ -33,6 +33,19 @@ everything is read fresh from `wl-paste --primary` (falling back to the
 clipboard) and the live Omarchy theme on every press — nothing is cached
 between snaps.
 
+## How it looks
+
+The window reads as a Hyprland tile, not a floating card: a border the exact
+width and colour of this desktop's `general:col.active_border`, corners
+rounded to `decoration:rounding`, and margins sized off `general:gaps_out` —
+all read live from `hyprctl` (falling back to Omarchy's own defaults off
+Hyprland). No shadow unless this desktop draws one. The backdrop is the
+current wallpaper at full sharpness, scaled to cover — no blur, no darkening
+overlay. The header carries the Omarchy maze mark in the theme's accent
+colour, the filename (or detected language) as the title, and the source and
+language beneath it (`ZED · JAVASCRIPT`, `PLAIN TEXT`, …) — no wordmark or
+logo anywhere.
+
 ### Editors
 
 Zed is colour-exact (tree-sitter + Zed's own `highlights.scm`, see below).
