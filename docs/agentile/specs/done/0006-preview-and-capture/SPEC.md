@@ -1,7 +1,8 @@
 ---
 title: Preview and capture — SUPER+ALT+S snaps the selection, previews it, copies or saves the PNG
 slug: preview-and-capture
-status: in_progress
+status: shipped
+shipped_at: 2026-09-05T17:00:03Z
 depends_on: [spike-selection-and-highlight-path, zed-highlighter, frame-renderer]
 type: feature
 route: foreground
