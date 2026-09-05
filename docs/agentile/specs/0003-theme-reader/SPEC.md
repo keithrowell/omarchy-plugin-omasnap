@@ -1,7 +1,7 @@
 ---
 title: Theme reader — parse the current Omarchy theme and editor settings into one colour model
 slug: theme-reader
-status: ready
+status: in_progress
 depends_on: []
 type: feature
 route: background
@@ -9,9 +9,9 @@ business_value: high
 technical_certainty: high
 created: 2026-09-05
 outcome: node --test passes with fixtures for two themes, and readTheme() returns the live theme's colours, Zed syntax map, VS Code tokenColors, wallpaper path and editor font with no hard-coded colours anywhere in lib/
-claimed_by:
-label:
-claimed_at:
+claimed_by: 1a113cd5-6977-4f8d-8308-ac8ac727576e
+label: 
+claimed_at: 2026-09-05T12:57:37Z
 ---
 
 # Theme reader — parse the current Omarchy theme and editor settings into one colour model
