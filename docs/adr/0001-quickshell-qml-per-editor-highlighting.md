@@ -70,3 +70,45 @@ Options considered:
 - Committed to: verifying early that Zed and VS Code publish selections to the
   Wayland primary selection and that window titles carry the filename (spike
   before the first Zed build); keeping every colour theme-sourced.
+
+## Amended 2026-09-05
+
+Spike `0002-spike-selection-and-highlight-path` (`findings.md`) verified the
+primary-selection input path and the tree-sitter + Zed-queries highlight
+path on this machine (Zed 1.18.1, tree-sitter CLI 0.26.9). Status stays
+**accepted**; both mechanisms this ADR commits to work as described, with
+one correction to how the highlight path is implemented:
+
+- **Zed does not highlight `.js` with `tree-sitter-javascript`.** Zed's own
+  `crates/grammars/src/javascript/config.toml` sets `grammar = "tsx"` — Zed
+  parses JavaScript with the TSX grammar from its own fork of
+  `tree-sitter-typescript` (pinned in Zed's `Cargo.lock`, e.g. commit
+  `e2c53597d6a5d9cf7bbe8dccde576fe1e46c5899` for `v1.18.1`). Zed's JavaScript
+  `highlights.scm` uses node types (`nested_type_identifier`) that only
+  exist in that TSX grammar; it fails to compile against plain
+  `tree-sitter-javascript`. **Spec 0005 must vendor Zed's `tree-sitter-typescript`
+  fork's `tsx` grammar for JavaScript, pinned to the commit Zed's own
+  `Cargo.lock` pins at the target Zed version** — not the plain, more
+  obvious `tree-sitter-javascript` grammar. Python is unaffected: Zed pins
+  plain upstream `tree-sitter-python` (`0.25.0` at `v1.18.1`), which compiles
+  and runs cleanly against Zed's Python `highlights.scm`.
+- The tree-sitter CLI (0.26.9), driven directly via `--lib-path`/`--lang-name`
+  against a vendored, prebuilt `.so`, compiles and runs both languages'
+  `highlights.scm` correctly and comfortably within the ~200ms budget (median
+  ~86ms for JS, ~47ms for Python on a 60-line fixture, process start
+  included) — the Node/WASM binding is not needed. Every capture either
+  language's query actually produces on ordinary source resolves onto the
+  live Zed theme's `syntax` keys via exact match or Zed's documented
+  dotted-prefix fallback.
+- On the input side: `wl-paste --primary` reads Zed's selection exactly,
+  publishes nothing to the clipboard, and fails predictably (exit 1,
+  "Nothing is copied") when empty, as this ADR assumed. Zed's window class is
+  `dev.zed.Zed`; its title format for a standalone file is `<file> — <file>`
+  (parseable with `^([^—]+?) — `). One risk surfaced, not yet resolved: after
+  firing an `exec`-style dispatch, `hyprctl activewindow -j` twice reported
+  an unrelated transient window instead of Zed on this machine (the primary
+  selection itself was unaffected) — spec 0006 should read `activewindow`
+  defensively rather than trust the first read unconditionally.
+
+See `findings.md` in the spike's spec directory for full evidence, commands,
+and output.

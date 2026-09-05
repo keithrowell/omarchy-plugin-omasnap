@@ -1,0 +1,7 @@
+url:    https://raw.githubusercontent.com/zed-industries/zed/v1.18.1/crates/grammars/src/javascript/highlights.scm
+repo:   https://github.com/zed-industries/zed
+tag:    v1.18.1
+commit: bebe92f469834a287f5a57ed78e8d51a918b8ada (matches installed `zed --version`)
+fetched: 2026-09-05
+note:   plan.md's `crates/languages/src/<lang>/highlights.scm` path is stale;
+        the queries now live under `crates/grammars/src/<lang>/highlights.scm`.
