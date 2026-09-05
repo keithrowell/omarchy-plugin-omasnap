@@ -1,7 +1,8 @@
 ---
 title: Spike — verify the primary-selection input path and the tree-sitter + Zed-queries highlight path
 slug: spike-selection-and-highlight-path
-status: in_progress
+status: shipped
+shipped_at: 2026-09-05T12:57:19Z
 depends_on: []
 type: spike
 route: spike
