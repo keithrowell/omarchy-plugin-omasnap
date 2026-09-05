@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 # Launch Omasnap as a standalone Quickshell process.
+#
+#   bin/omasnap                                                    # the live app (placeholder until spec 0006)
+#   bin/omasnap --fixture F --out P [--theme-dir D] [--wallpaper W] # headless fixture render
+#
+# Render mode runs `lib/input.mjs` with Node to build one JSON input (the
+# fixture's spans resolved against a theme), then starts `qs` with
+# OMASNAP_INPUT/OMASNAP_OUT set; `app/Main.qml`'s render mode grabs the
+# frame to `--out` and quits. See the plan for spec 0004.
 set -euo pipefail
+
+usage() {
+  echo "usage: bin/omasnap [--fixture F --out P [--theme-dir D] [--wallpaper W]]"
+}
 
 if ! command -v qs >/dev/null 2>&1; then
   echo "omasnap: 'qs' (Quickshell) was not found on PATH." >&2
@@ -10,4 +22,82 @@ fi
 
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 
-exec qs -p "$ROOT/app/Main.qml" "$@"
+# Errors (not `set -u`'s generic "unbound variable") on a flag with no
+# following value, e.g. a trailing `--out` with nothing after it.
+require_value() {
+  if [ "$#" -lt 2 ]; then
+    echo "omasnap: $1 requires a value" >&2
+    usage >&2
+    exit 2
+  fi
+}
+
+FIXTURE=""
+OUT=""
+THEME_DIR=""
+WALLPAPER=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --fixture) require_value "$@"; FIXTURE="$2"; shift 2 ;;
+    --out) require_value "$@"; OUT="$2"; shift 2 ;;
+    --theme-dir) require_value "$@"; THEME_DIR="$2"; shift 2 ;;
+    --wallpaper) require_value "$@"; WALLPAPER="$2"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "omasnap: unknown option '$1'" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+if [ -z "$FIXTURE" ]; then
+  exec qs -p "$ROOT/app/Main.qml"
+fi
+
+if [ -z "$OUT" ]; then
+  echo "omasnap: --out is required with --fixture" >&2
+  usage >&2
+  exit 2
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "omasnap: 'node' was not found on PATH." >&2
+  echo "Install it with: sudo pacman -S nodejs" >&2
+  exit 1
+fi
+
+# Resolved in two steps, not `$(readlink -f "$(dirname "$OUT")")/$(basename
+# "$OUT")` in one: when the directory doesn't exist, `readlink -f` on it
+# fails and prints nothing, but that failure is masked by the *second*
+# (always-successful) `$(basename ...)` substitution — a compound
+# assignment's exit status is that of its last command substitution, so
+# `set -e` never saw it, and `--out bogus-dir/x.png` silently resolved to
+# `/x.png`. Checking the directory explicitly first fails loudly instead.
+OUT_DIR="$(dirname "$OUT")"
+if [ ! -d "$OUT_DIR" ]; then
+  echo "omasnap: --out's directory '$OUT_DIR' does not exist" >&2
+  exit 2
+fi
+OUT="$(readlink -f "$OUT_DIR")/$(basename "$OUT")"
+
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/omasnap"
+mkdir -p "$RUNTIME_DIR"
+INPUT="$RUNTIME_DIR/input-$$.json"
+trap 'rm -f "$INPUT"' EXIT
+
+INPUT_ARGS=(--fixture "$FIXTURE")
+if [ -n "$THEME_DIR" ]; then
+  INPUT_ARGS+=(--theme-dir "$THEME_DIR")
+fi
+if [ -n "$WALLPAPER" ]; then
+  INPUT_ARGS+=(--wallpaper "$WALLPAPER")
+fi
+
+# `set -e` propagates a non-zero exit from either command below as this
+# script's own exit status.
+node "$ROOT/lib/input.mjs" "${INPUT_ARGS[@]}" > "$INPUT"
+OMASNAP_INPUT="$INPUT" OMASNAP_OUT="$OUT" qs -p "$ROOT/app/Main.qml"
+
+if [ -s "$OUT" ]; then
+  echo "wrote $OUT"
+else
+  echo "omasnap: qs exited 0 but $OUT is missing or empty" >&2
+  exit 1
+fi

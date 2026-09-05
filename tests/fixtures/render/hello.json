@@ -1,0 +1,252 @@
+{
+  "filename": "hello.js",
+  "language": "javascript",
+  "editor": "zed",
+  "font": {
+    "family": "JetBrainsMono Nerd Font",
+    "size": 13
+  },
+  "lines": [
+    [
+      {
+        "text": "// Greet someone by name.",
+        "capture": "comment"
+      }
+    ],
+    [
+      {
+        "text": "function",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "greet",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "name",
+        "capture": "variable"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "{",
+        "capture": "punctuation.bracket"
+      }
+    ],
+    [
+      {
+        "text": "  "
+      },
+      {
+        "text": "const",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "message",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "`Hello, ",
+        "capture": "string"
+      },
+      {
+        "text": "${",
+        "capture": "punctuation.special"
+      },
+      {
+        "text": "name",
+        "capture": "variable"
+      },
+      {
+        "text": "}",
+        "capture": "punctuation.special"
+      },
+      {
+        "text": "!`",
+        "capture": "string"
+      },
+      {
+        "text": ";",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "  "
+      },
+      {
+        "text": "const",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "times",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "3",
+        "capture": "number"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "+",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "4",
+        "capture": "number"
+      },
+      {
+        "text": ";",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "  "
+      },
+      {
+        "text": "console",
+        "capture": "variable"
+      },
+      {
+        "text": ".",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": "log",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "message",
+        "capture": "variable"
+      },
+      {
+        "text": ".",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": "length",
+        "capture": "property"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "times",
+        "capture": "variable"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": ";",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "  "
+      },
+      {
+        "text": "return",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "message",
+        "capture": "variable"
+      },
+      {
+        "text": ";",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "}",
+        "capture": "punctuation.bracket"
+      }
+    ],
+    [
+      {
+        "text": ""
+      }
+    ],
+    [
+      {
+        "text": "greet",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "\"World\"",
+        "capture": "string"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": ";",
+        "capture": "punctuation.delimiter"
+      }
+    ]
+  ]
+}

@@ -56,7 +56,7 @@ o.window({ title = "^(Omasnap)$" }, { float = true, center = true })
 ## Required packages
 
 ```
-sudo pacman -S --needed quickshell wl-clipboard tree-sitter-cli tree-sitter-bash tree-sitter-c tree-sitter-javascript tree-sitter-lua tree-sitter-markdown tree-sitter-python tree-sitter-rust
+sudo pacman -S --needed quickshell wl-clipboard qt6-5compat tree-sitter-cli tree-sitter-bash tree-sitter-c tree-sitter-javascript tree-sitter-lua tree-sitter-markdown tree-sitter-python tree-sitter-rust
 ```
 
 `bin/install` reads this exact line and reports anything from it that is not
@@ -83,6 +83,15 @@ restart. Nothing is ever hard-coded.
 bin/omasnap                        # run from the checkout
 node --test tests/*.test.mjs       # installer and manifest tests
 ```
+
+`bin/omasnap --fixture F --out P` renders a fixture (a JSON file shaped like
+`tests/fixtures/render/*.json`: filename, language, editor, font and
+highlighted lines) straight to a PNG, headlessly, with no selection or editor
+involved — the same frame (`app/Snap.qml`) the real snap window uses, so it's
+how builders and reviewers check the look without a live selection. It reads
+the current Omarchy theme by default; `--theme-dir` and `--wallpaper`
+override which theme and wallpaper it renders against, for comparing themes
+side by side.
 
 `docs/agentile/` and `docs/adr/` carry the backlog and the decision records
 this project is built from (see `CLAUDE.md`).

@@ -1,0 +1,1525 @@
+{
+  "filename": "pipeline.py",
+  "language": "python",
+  "editor": "zed",
+  "font": {
+    "family": "JetBrainsMono Nerd Font",
+    "size": 13
+  },
+  "lines": [
+    [
+      {
+        "text": "\"\"\"Pipeline utilities for the batch export job.\"\"\"",
+        "capture": "string.doc"
+      }
+    ],
+    [
+      {
+        "text": ""
+      }
+    ],
+    [
+      {
+        "text": "import",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "json",
+        "capture": "variable"
+      }
+    ],
+    [
+      {
+        "text": "import",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "logging",
+        "capture": "variable"
+      }
+    ],
+    [
+      {
+        "text": "from",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "dataclasses",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "import",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "dataclass",
+        "capture": "variable"
+      }
+    ],
+    [
+      {
+        "text": "from",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "typing",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "import",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "Iterable",
+        "capture": "variable"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "Optional",
+        "capture": "variable"
+      }
+    ],
+    [
+      {
+        "text": ""
+      }
+    ],
+    [
+      {
+        "text": "logger",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "logging",
+        "capture": "variable"
+      },
+      {
+        "text": ".",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": "getLogger",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "__name__",
+        "capture": "variable"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      }
+    ],
+    [
+      {
+        "text": ""
+      }
+    ],
+    [
+      {
+        "text": "DEFAULT_BATCH_SIZE",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "100",
+        "capture": "number"
+      }
+    ],
+    [
+      {
+        "text": ""
+      }
+    ],
+    [
+      {
+        "text": "@dataclass",
+        "capture": "attribute"
+      }
+    ],
+    [
+      {
+        "text": "class",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "Record",
+        "capture": "variable"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "\"\"\"A single row pulled from the source table.\"\"\"",
+        "capture": "string.doc"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "id",
+        "capture": "variable"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "int",
+        "capture": "variable"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "name",
+        "capture": "variable"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "str",
+        "capture": "variable"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "tags",
+        "capture": "variable"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "list",
+        "capture": "variable"
+      }
+    ],
+    [
+      {
+        "text": ""
+      }
+    ],
+    [
+      {
+        "text": "def",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "load_records",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "path",
+        "capture": "variable"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "str",
+        "capture": "variable"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "->",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "list",
+        "capture": "variable"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "\"\"\"Load records from a JSON file on disk.\"\"\"",
+        "capture": "string.doc"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "with",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "open",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "path",
+        "capture": "variable"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"r\"",
+        "capture": "string"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "as",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "handle",
+        "capture": "variable"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "        "
+      },
+      {
+        "text": "data",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "json",
+        "capture": "variable"
+      },
+      {
+        "text": ".",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": "load",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "handle",
+        "capture": "variable"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "return",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "[",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "Record",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "*",
+        "capture": "operator"
+      },
+      {
+        "text": "*",
+        "capture": "operator"
+      },
+      {
+        "text": "row",
+        "capture": "variable"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "for",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "row",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "in",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "data",
+        "capture": "variable"
+      },
+      {
+        "text": "]",
+        "capture": "punctuation.bracket"
+      }
+    ],
+    [
+      {
+        "text": ""
+      }
+    ],
+    [
+      {
+        "text": "def",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "chunk",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "records",
+        "capture": "variable"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "size",
+        "capture": "variable"
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": "DEFAULT_BATCH_SIZE",
+        "capture": "variable"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "batch",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "[",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "]",
+        "capture": "punctuation.bracket"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "for",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "record",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "in",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "records",
+        "capture": "variable"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "        "
+      },
+      {
+        "text": "batch",
+        "capture": "variable"
+      },
+      {
+        "text": ".",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": "append",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "record",
+        "capture": "variable"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      }
+    ],
+    [
+      {
+        "text": "        "
+      },
+      {
+        "text": "if",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "len",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "batch",
+        "capture": "variable"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": ">=",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "size",
+        "capture": "variable"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "            "
+      },
+      {
+        "text": "yield",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "batch",
+        "capture": "variable"
+      }
+    ],
+    [
+      {
+        "text": "            "
+      },
+      {
+        "text": "batch",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "[",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "]",
+        "capture": "punctuation.bracket"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "if",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "batch",
+        "capture": "variable"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "        "
+      },
+      {
+        "text": "yield",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "batch",
+        "capture": "variable"
+      }
+    ],
+    [
+      {
+        "text": ""
+      }
+    ],
+    [
+      {
+        "text": "@retry",
+        "capture": "attribute"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "times",
+        "capture": "variable"
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": "3",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "delay",
+        "capture": "variable"
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": "1.0",
+        "capture": "number"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      }
+    ],
+    [
+      {
+        "text": "def",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "export_batch",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "batch",
+        "capture": "variable"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "destination",
+        "capture": "variable"
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": "None",
+        "capture": "constant"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "logger",
+        "capture": "variable"
+      },
+      {
+        "text": ".",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": "info",
+        "capture": "function"
+      },
+      {
+        "text": "(",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "f\"exporting {len(batch)} records to {destination}\"",
+        "capture": "string"
+      },
+      {
+        "text": ")",
+        "capture": "punctuation.bracket"
+      }
+    ],
+    [
+      {
+        "text": "    "
+      },
+      {
+        "text": "return",
+        "capture": "keyword"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "True",
+        "capture": "constant"
+      }
+    ],
+    [
+      {
+        "text": ""
+      }
+    ],
+    [
+      {
+        "text": "LARGE_LOOKUP",
+        "capture": "variable"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "=",
+        "capture": "operator"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "{",
+        "capture": "punctuation.bracket"
+      },
+      {
+        "text": "\"a\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "1",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"b\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "2",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"c\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "3",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"d\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "4",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"e\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "5",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"f\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "6",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"g\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "7",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"h\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "8",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"i\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "9",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"j\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "10",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"k\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "11",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"l\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "12",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"m\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "13",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"n\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "14",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"o\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "15",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"p\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "16",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"q\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "17",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"r\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "18",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"s\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "19",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"t\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "20",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"u\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "21",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"v\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "22",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"w\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "23",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"x\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "24",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"y\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "25",
+        "capture": "number"
+      },
+      {
+        "text": ",",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "\"z\"",
+        "capture": "string"
+      },
+      {
+        "text": ":",
+        "capture": "punctuation.delimiter"
+      },
+      {
+        "text": " "
+      },
+      {
+        "text": "26",
+        "capture": "number"
+      },
+      {
+        "text": "}",
+        "capture": "punctuation.bracket"
+      }
+    ]
+  ]
+}
