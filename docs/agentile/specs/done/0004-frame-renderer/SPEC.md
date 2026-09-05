@@ -1,7 +1,8 @@
 ---
 title: Frame renderer — the Omarchy-styled window, blurred-wallpaper backdrop and PNG export in QML
 slug: frame-renderer
-status: in_progress
+status: shipped
+shipped_at: 2026-09-05T14:33:06Z
 depends_on: [theme-reader]
 type: feature
 route: foreground
