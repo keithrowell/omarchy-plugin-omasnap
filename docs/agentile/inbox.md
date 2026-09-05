@@ -8,3 +8,5 @@ Drop stubs with `/ag-capture <idea>`. Shape them into specs with `/ag-shape`. A 
 - [ ] Generic highlighter for non-editor windows, coloured from colors.toml — (captured 2026-09-05)
 - [ ] Backdrop variants in the preview: theme gradient, solid darker_background, transparent — (captured 2026-09-05)
 - [ ] Spec 0006 names SUPER+ALT+S as the snap binding; that is Omarchy's "move window to scratchpad" default. Spec 0001 shipped SUPER+ALT+SHIFT+S; update 0006's title, criteria and README wording to match — (captured 2026-09-05)
+- [ ] Spec 0005 must vendor the tsx grammar from zed-industries/tree-sitter-typescript at the commit Zed v1.18.1 pins (e2c53597) for JavaScript; plain tree-sitter-javascript fails to compile Zed's query (spike 0002, Q5) — (captured 2026-09-05)
+- [ ] Spec 0006: read hyprctl activewindow -j defensively; the first read after a dispatch can be a transient window (gcr keyring prompt); sanity-check the class and fall back to the last known editor (spike 0002, Q2) — (captured 2026-09-05)
