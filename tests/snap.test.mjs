@@ -183,6 +183,25 @@ test("prepareSnap: a transient window class is treated as other, with no filenam
   assert.equal(result.detected.filename, null);
 });
 
+test("prepareSnap: a six-tab-indented selection is dedented before highlighting, and the removed indent is reported", () => {
+  let recordedText = null;
+  const result = prepareSnap({
+    text: "\t\t\t\t\t\tfoo\n\t\t\t\t\t\t\tbar",
+    windowClass: "foot",
+    title: "",
+    theme: GRUVBOX,
+    highlightFn: ({ text }) => {
+      recordedText = text;
+      return canned(text);
+    },
+    fontFn: () => ({ family: "monospace", size: 13 }),
+  });
+  assert.equal(recordedText, "foo\n\tbar");
+  assert.equal(result.snap.lines[0][0].text, "foo");
+  assert.equal(result.snap.lines[1][0].text, "\tbar");
+  assert.equal(result.detected.removedIndent, "\t".repeat(6));
+});
+
 // --- CLI -----------------------------------------------------------------
 
 function writeWindow(dir, obj) {
