@@ -1,7 +1,8 @@
 ---
 title: Theme reader — parse the current Omarchy theme and editor settings into one colour model
 slug: theme-reader
-status: in_progress
+status: shipped
+shipped_at: 2026-09-05T13:17:49Z
 depends_on: []
 type: feature
 route: background
