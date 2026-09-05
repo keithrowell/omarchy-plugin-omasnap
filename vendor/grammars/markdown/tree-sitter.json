@@ -1,0 +1,3 @@
+{
+  "grammars": [ { "name": "markdown", "camelcase": "markdown", "scope": "source.markdown" } ]
+}

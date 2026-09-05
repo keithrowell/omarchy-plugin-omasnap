@@ -1,0 +1,2 @@
+This is a plain text file with no associated grammar.
+It should never be highlighted, only rendered as-is.

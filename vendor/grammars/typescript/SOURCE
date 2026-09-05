@@ -1,0 +1,6 @@
+repo:    https://github.com/zed-industries/tree-sitter-typescript
+subdir:  typescript
+ref:     e2c53597d6a5d9cf7bbe8dccde576fe1e46c5899 (commit)
+fetched: 2026-09-05
+licence: LICENSE
+note:    common/scanner.h: shared with tsx/typescript, from the same https://github.com/zed-industries/tree-sitter-typescript @ e2c53597d6a5d9cf7bbe8dccde576fe1e46c5899 (../../common/scanner.h, relative to this grammar's src/scanner.c)

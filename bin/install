@@ -189,6 +189,23 @@ else
   fi
 fi
 
+# Compile the vendored Zed-highlighting grammars (docs/adr/0002). Skipped
+# under --dry-run (it writes .so files, a real side effect); a failure here
+# is reported but never fails the install, same policy as a missing
+# package — the highlighter itself degrades to plain spans without one.
+if (( DRY_RUN )); then
+  say "grammars: skipped (--dry-run)"
+elif [[ -x "$ROOT/bin/build-grammars" ]]; then
+  if grammar_out="$("$ROOT/bin/build-grammars" 2>&1)"; then
+    while IFS= read -r line; do say "$line"; done <<< "$grammar_out"
+  else
+    say "grammars: bin/build-grammars failed (see below); the highlighter will still run, in plain-text mode, until this is fixed"
+    while IFS= read -r line; do say "  $line"; done <<< "$grammar_out"
+  fi
+else
+  say "grammars: skipped (bin/build-grammars is missing or not executable)"
+fi
+
 # The Hyprland binding and window rule: printed, never applied. Omarchy's
 # Hyprland config is Lua; the canonical plugin path is used here (not ROOT)
 # since this snippet is meant to be pasted once and shared across machines.

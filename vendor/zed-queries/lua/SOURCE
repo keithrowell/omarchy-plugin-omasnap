@@ -1,0 +1,5 @@
+url:     https://raw.githubusercontent.com/zed-extensions/lua/main/languages/lua/highlights.scm
+repo:    https://github.com/zed-extensions/lua
+ref:     ec8fe51d2f6b33cacccf90fbcddd705a1edbd0cd
+fetched: 2026-09-05
+licence: ./LICENSE (fetched from https://github.com/zed-extensions/lua/blob/main/LICENSE)

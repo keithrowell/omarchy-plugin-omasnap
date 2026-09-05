@@ -1,0 +1,3 @@
+{
+  "grammars": [ { "name": "markdown_inline", "camelcase": "markdown_inline", "scope": "source.markdown_inline" } ]
+}

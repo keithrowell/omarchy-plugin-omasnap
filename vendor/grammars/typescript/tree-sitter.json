@@ -1,0 +1,3 @@
+{
+  "grammars": [ { "name": "typescript", "camelcase": "typescript", "scope": "source.typescript" } ]
+}

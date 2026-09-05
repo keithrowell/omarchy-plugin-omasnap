@@ -1,0 +1,3 @@
+{
+  "grammars": [ { "name": "tsx", "camelcase": "tsx", "scope": "source.tsx" } ]
+}

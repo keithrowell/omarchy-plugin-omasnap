@@ -1,0 +1,7 @@
+{
+  // a comment
+  "name": "Ada",
+  "active": true,
+  "score": null,
+  "friends": ["Grace", "Margaret"]
+}

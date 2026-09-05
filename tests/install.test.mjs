@@ -215,11 +215,11 @@ test("packages: reports missing packages and the install line, without failing t
   const home = scratchHome();
   try {
     const path = basePath(home);
-    addFakePacman(path, ["tree-sitter-rust", "tree-sitter-python"]);
+    addFakePacman(path, ["tree-sitter-cli", "gcc"]);
     const result = run(home, ["--dry-run"], path);
     assert.equal(result.code, 0, result.err);
-    assert.match(result.out, /^packages: missing tree-sitter-rust tree-sitter-python$/m);
-    assert.match(result.out, /^ {2}sudo pacman -S --needed tree-sitter-rust tree-sitter-python$/m);
+    assert.match(result.out, /^packages: missing tree-sitter-cli gcc$/m);
+    assert.match(result.out, /^ {2}sudo pacman -S --needed tree-sitter-cli gcc$/m);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

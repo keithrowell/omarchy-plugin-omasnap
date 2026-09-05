@@ -1,0 +1,6 @@
+# Greets someone by name.
+name: Ada
+active: true
+friends:
+  - Grace
+  - Margaret

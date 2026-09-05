@@ -1,0 +1,3 @@
+{
+  "grammars": [ { "name": "yaml", "camelcase": "yaml", "scope": "source.yaml" } ]
+}

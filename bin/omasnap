@@ -48,6 +48,13 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$FIXTURE" ]; then
+  # A live selection is highlighted with the vendored Zed grammars
+  # (docs/adr/0002); if none have been compiled yet, say so once, briefly —
+  # the highlighter itself still renders (in plain text, uncoloured) rather
+  # than failing, so this is a hint, not a blocker.
+  if [ -x "$ROOT/bin/build-grammars" ] && ! "$ROOT/bin/build-grammars" --check >/dev/null 2>&1; then
+    echo "omasnap: some Zed grammars are not built yet; run bin/install (highlighting will be plain text until then)" >&2
+  fi
   exec qs -p "$ROOT/app/Main.qml"
 fi
 

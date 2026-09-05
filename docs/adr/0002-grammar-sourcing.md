@@ -1,7 +1,7 @@
 ---
 number: 0002
 title: Grammar sourcing — vendored tree-sitter sources at Zed's pins, built at install time
-status: proposed
+status: accepted
 date: 2026-09-06
 ---
 
@@ -9,7 +9,7 @@ date: 2026-09-06
 
 ## Status
 
-proposed (accepted when spec 0005 merges)
+accepted (spec 0005 merged 2026-09-06)
 
 ## Context
 

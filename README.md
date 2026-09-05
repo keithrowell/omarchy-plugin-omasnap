@@ -40,6 +40,9 @@ touching anything; `--uninstall` reverses it; running it again reports
   so the app can be started from a terminal;
 - checks the required packages below are installed and reports any missing
   ones (it never fails the install over a missing package);
+- compiles the vendored Zed-highlighting grammars (`bin/build-grammars`,
+  below) and reports what it built, without failing the install if that
+  step has a problem;
 - prints, but never applies, the Hyprland binding below.
 
 ## Binding
@@ -56,11 +59,36 @@ o.window({ title = "^(Omasnap)$" }, { float = true, center = true })
 ## Required packages
 
 ```
-sudo pacman -S --needed quickshell wl-clipboard qt6-5compat tree-sitter-cli tree-sitter-bash tree-sitter-c tree-sitter-javascript tree-sitter-lua tree-sitter-markdown tree-sitter-python tree-sitter-rust
+sudo pacman -S --needed quickshell wl-clipboard qt6-5compat tree-sitter-cli gcc nodejs
 ```
 
 `bin/install` reads this exact line and reports anything from it that is not
 installed, with the command to install it.
+
+## Zed-exact highlighting and the grammar build step
+
+Zed's own highlighting rules — its tree-sitter grammars and `highlights.scm`
+queries, at the versions Zed itself pins — are vendored under `vendor/`
+rather than taken from pacman's `tree-sitter-grammars` packages, so the
+colours are exactly Zed's regardless of what grammar versions Arch happens
+to package (see `docs/adr/0002-grammar-sourcing.md`). `bin/install` runs
+`bin/build-grammars`, which compiles each `vendor/grammars/<name>/` source
+tree into `vendor/grammars/lib/<name>.so` with the `tree-sitter` CLI
+(idempotent — a second run reports `unchanged`; `bin/build-grammars --check`
+reports what's missing without building). The first install compiles every
+grammar, which takes well under a minute on a typical machine even for the
+larger TypeScript/TSX grammars; later installs are near-instant. Re-run
+`tools/vendor-grammars.sh` (network, dev-time only) to bump a grammar or
+query pin.
+
+**Supported languages:** JavaScript/JSX, TypeScript, TSX, Python, Rust, C,
+Bash, JSON(C), YAML, Markdown (block-level only — see below), Ruby, Lua.
+Anything else falls back to one plain span per line in the theme's editor
+foreground, never an error. Markdown is highlighted with Zed's own *block*
+grammar only: headings, list markers and fenced-code delimiters colour; a
+fenced code block's contents and inline emphasis (no injections in this
+build) render as plain text. Zed's semantic (LSP) highlighting, layered on
+top of tree-sitter in the real editor, is not reproduced.
 
 ## Where the colours come from
 
@@ -82,6 +110,8 @@ restart. Nothing is ever hard-coded.
 ```bash
 bin/omasnap                        # run from the checkout
 node --test tests/*.test.mjs       # installer and manifest tests
+bin/build-grammars                 # compile vendored grammars (first run only; node --test does this too)
+bin/build-grammars --check         # report what's missing/stale without building
 ```
 
 `bin/omasnap --fixture F --out P` renders a fixture (a JSON file shaped like

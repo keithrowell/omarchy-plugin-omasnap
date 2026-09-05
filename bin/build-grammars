@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# Compile every vendored tree-sitter grammar source under vendor/grammars/
+# into vendor/grammars/lib/<name>.so, with `tree-sitter build`.
+#
+#   bin/build-grammars           # build whatever is missing or stale
+#   bin/build-grammars --check   # report only; exit 1 if anything needs building
+#
+# Idempotent by mtime: a grammar whose .so is newer than every file under its
+# src/ (and its tree-sitter.json) is left alone. Requires the `tree-sitter`
+# CLI and a C compiler (see README.md's package line); a missing tool prints
+# a clear message and exits 1 rather than a bare command-not-found. Never
+# touches the network (see tools/vendor-grammars.sh for that) or
+# ~/.config/tree-sitter.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+GRAMMARS_DIR="$ROOT/vendor/grammars"
+LIB_DIR="$GRAMMARS_DIR/lib"
+
+CHECK=0
+for arg in "$@"; do
+  case "$arg" in
+    --check) CHECK=1 ;;
+    -h|--help) echo "usage: bin/build-grammars [--check]"; exit 0 ;;
+    *) echo "build-grammars: unknown option '$arg'" >&2; exit 2 ;;
+  esac
+done
+
+if ! command -v tree-sitter >/dev/null 2>&1; then
+  echo "build-grammars: 'tree-sitter' (tree-sitter-cli) was not found on PATH." >&2
+  echo "Install it with: sudo pacman -S tree-sitter-cli" >&2
+  exit 1
+fi
+if ! command -v cc >/dev/null 2>&1 && ! command -v gcc >/dev/null 2>&1; then
+  echo "build-grammars: no C compiler ('cc'/'gcc') was found on PATH." >&2
+  echo "Install one with: sudo pacman -S --needed base-devel" >&2
+  exit 1
+fi
+
+if [ ! -d "$GRAMMARS_DIR" ]; then
+  echo "build-grammars: $GRAMMARS_DIR does not exist" >&2
+  exit 1
+fi
+
+mkdir -p "$LIB_DIR"
+
+STALE=0
+for dir in "$GRAMMARS_DIR"/*/; do
+  name="$(basename "$dir")"
+  [ "$name" = "lib" ] && continue
+  [ "$name" = "common" ] && continue
+  [ -d "$dir/src" ] || continue
+
+  so="$LIB_DIR/$name.so"
+  needs_build=0
+  if [ ! -f "$so" ]; then
+    needs_build=1
+  else
+    while IFS= read -r -d '' src_file; do
+      if [ "$src_file" -nt "$so" ]; then
+        needs_build=1
+        break
+      fi
+    done < <(find "$dir" -type f -print0)
+  fi
+
+  if [ "$needs_build" -eq 0 ]; then
+    echo "grammar: unchanged $name"
+    continue
+  fi
+
+  STALE=1
+  if [ "$CHECK" -eq 1 ]; then
+    echo "grammar: needs build $name"
+    continue
+  fi
+
+  start=$(date +%s.%N)
+  tree-sitter build --output "$so" "$dir"
+  end=$(date +%s.%N)
+  elapsed=$(awk -v a="$start" -v b="$end" 'BEGIN { printf "%.1f", b - a }')
+  echo "grammar: built $name (${elapsed}s)"
+done
+
+if [ "$CHECK" -eq 1 ] && [ "$STALE" -eq 1 ]; then
+  exit 1
+fi

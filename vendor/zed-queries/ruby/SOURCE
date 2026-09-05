@@ -1,0 +1,5 @@
+url:     https://raw.githubusercontent.com/zed-extensions/ruby/main/languages/ruby/highlights.scm
+repo:    https://github.com/zed-extensions/ruby
+ref:     a88801c1657f01e02acf428b800e0d7ce2d6f241
+fetched: 2026-09-05
+licence: ./LICENSE (fetched from https://github.com/zed-extensions/ruby/blob/main/LICENSE-APACHE)
