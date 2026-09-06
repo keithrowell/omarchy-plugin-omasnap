@@ -84,18 +84,32 @@ coloured instead.
 
 ## Install on Omarchy
 
-Either clone this repo straight into the plugin directory:
+The quick way — Omarchy's own plugin manager fetches the repo for you:
 
 ```bash
-git clone https://github.com/keithrowell/omarchy-plugin-omasnap.git ~/.config/omarchy/plugins/com.keithrowell.omasnap
+omarchy plugin add https://github.com/keithrowell/omarchy-plugin-omasnap.git --enable
 ~/.config/omarchy/plugins/com.keithrowell.omasnap/bin/install
 ```
 
-or keep a checkout elsewhere (a development clone, or this repo as a
-submodule of the dotfiles the way the other `com.keithrowell.*` plugins are)
-and let `bin/install` symlink it into place:
+`omarchy plugin add` (add `--yes` to skip its confirmation prompt) clones
+this repo straight into `~/.config/omarchy/plugins/com.keithrowell.omasnap`,
+validates it against Omarchy's plugin schema, and enables it in the running
+shell — the "Enable the shell plugin" step below is already done for you.
+`bin/install` then finishes what enabling alone doesn't: it compiles the
+vendored Zed grammars (below — skip this and code still snaps, just in
+plain text instead of Zed's real colours), adds an app-launcher entry,
+links `omasnap` onto your PATH, checks the required packages, and prints
+the Hyprland binding to add by hand. Update later with
+`omarchy plugin update com.keithrowell.omasnap`.
+
+Developing on this repo instead? Keep a checkout elsewhere (a working
+clone, or this repo as a submodule of your dotfiles the way the other
+`com.keithrowell.*` plugins are) and let `bin/install` symlink it into
+place — this path does *not* enable the shell plugin for you, see below:
 
 ```bash
+git clone https://github.com/keithrowell/omarchy-plugin-omasnap.git
+cd omarchy-plugin-omasnap
 bin/install
 ```
 
@@ -119,8 +133,10 @@ touching anything; `--uninstall` reverses it; running it again reports
 
 ## Enable the shell plugin
 
-`bin/install` never does this for you — it's a real change to the running
-shell, unlike the files above. One command, once:
+Already done if you installed with `omarchy plugin add --enable` above.
+Otherwise — `bin/install` never does this for you, since it's a real
+change to the running shell, not a file it can just write. One command,
+once:
 
 ```bash
 omarchy plugin enable com.keithrowell.omasnap
@@ -143,6 +159,14 @@ o.window({ title = "^(Omasnap)$" }, { float = true, center = true })
 
 ## Uninstall
 
+Installed with `omarchy plugin add`:
+
+```bash
+omarchy plugin remove com.keithrowell.omasnap
+```
+
+Installed from your own checkout with `bin/install`:
+
 ```bash
 omarchy plugin disable com.keithrowell.omasnap   # stop the shell service
 ~/.config/omarchy/plugins/com.keithrowell.omasnap/bin/install --uninstall
@@ -153,8 +177,8 @@ this checkout — the plugin symlink (if you installed by cloning straight
 into the plugin directory), the app launcher entry, and the
 `~/.local/bin/omasnap` launcher symlink — reporting anything it finds but
 doesn't own as "left alone". It never touches your own checkout of this
-repo; delete that yourself if you're removing Omasnap entirely. Then remove
-the binding block above from `~/.config/hypr/bindings.lua` by hand.
+repo; delete that yourself if you're removing Omasnap entirely. Either way,
+remove the binding block above from `~/.config/hypr/bindings.lua` by hand.
 
 ## Required packages
 
