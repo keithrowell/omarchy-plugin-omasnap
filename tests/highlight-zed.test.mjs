@@ -424,6 +424,18 @@ test("highlight(): a language id with no known config warns and degrades to plai
   assert.equal(result.lines[0][0].color, GRUVBOX.zed.style.editorForeground);
 });
 
+test("highlight(): a recognised language against a theme with no zed-theme.json warns and degrades to plain spans, never throws", () => {
+  // Most Omarchy themes ship no zed-theme.json at all — only a handful of
+  // hand-authored community themes do (docs/gallery/SOURCES.md). This must
+  // degrade exactly like an unrecognised language, not dereference
+  // theme.zed and throw.
+  const themeWithoutZed = { ...GRUVBOX, zed: null };
+  const result = highlight({ text: "const x = 1;\n", language: "javascript", theme: themeWithoutZed });
+  assert.equal(result.warnings.length, 1);
+  assert.match(result.warnings[0], /no zed-theme\.json/);
+  assert.equal(result.lines[0][0].color, GRUVBOX.colors.foreground);
+});
+
 test("highlight(): a missing grammar .so warns and degrades to plain spans, never throws", () => {
   const empty = mkdtempSync(join(tmpdir(), "omasnap-empty-root-"));
   try {
