@@ -51,8 +51,24 @@ logo anywhere.
 Zed is colour-exact (tree-sitter + Zed's own `highlights.scm`, see below).
 Anywhere else — a terminal, a browser, another editor — still snaps,
 highlighted the same way, with the language detected from a shebang line
-when there's no filename to go on; VS Code's own exact colouring is a
-later spec.
+when there's no filename to go on. **VS Code's own exact colouring
+(TextMate grammars via its `tokenColors`) is next — it's an unclaimed spec
+in the backlog, not yet started.** If you use VS Code, a PR is very
+welcome; see `docs/agentile/inbox.md` and `docs/agentile/specs/` for where
+that work is tracked, and `docs/adr/0002-grammar-sourcing.md` for how Zed's
+own grammars were vendored, as the pattern to follow for VS Code's.
+
+## Gallery
+
+Six real snippets, six themes, all rendered by `bin/omasnap` itself — see
+[`docs/gallery/SOURCES.md`](docs/gallery/SOURCES.md) for exactly where each
+piece of code came from and how to reproduce a render.
+
+|  |  |
+|---|---|
+| ![DaisyStack's realtime push, Gruvbox Dark](docs/gallery/push-gruvbox-dark.png) `DaisyStack::Push` (Ruby) — Gruvbox Dark | ![The same push demo, Rosé Pine](docs/gallery/push-rose-pine.png) The same demo — Rosé Pine (light) |
+| ![DaisyStack's Timeline component, 2001](docs/gallery/timeline-2001.png) `DaisyStack::Ui::Components::Timeline` (Ruby) — 2001 | ![A generic Go worker pool, Decorative Stitch](docs/gallery/worker-pool-decorative-stitch.png) A bounded worker pool (Go) — Decorative Stitch |
+| ![sigmoid and softmax, Osaka Jade](docs/gallery/activation-osaka-jade.png) `sigmoid`/`softmax` (Rust) — Osaka Jade | ![The Zen of Python, Catppuccin](docs/gallery/zen-catppuccin.png) *The Zen of Python* — plain text, no editor — Catppuccin |
 
 ## Install
 
