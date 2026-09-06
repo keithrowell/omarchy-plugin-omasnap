@@ -136,7 +136,11 @@ test("buildInput: theme.editor.* is populated from Zed when a zed theme is loade
   assert.equal(input.theme.editor.lineNumber, GRUVBOX.zed.style.lineNumber);
 });
 
-test("buildInput: falls back to colors.toml when the theme has no Zed file", () => {
+test("buildInput: a theme with no Zed file still colours from a synthesized one, matching colors.toml's background/foreground", () => {
+  // Most Omarchy themes ship no zed-theme.json at all — readTheme()
+  // synthesizes a generic one from colors.toml (synthesizeZedTheme) rather
+  // than leaving `zed` null, so this never falls all the way back to flat,
+  // uncoloured text (tests/theme.test.mjs covers the synthesis itself).
   const dir = scratchDir("omasnap-input-novscode-");
   try {
     writeFileSync(
@@ -157,12 +161,12 @@ test("buildInput: falls back to colors.toml when the theme has no Zed file", () 
       ].join("\n"),
     );
     const theme = readTheme(dir);
-    assert.equal(theme.zed, null);
+    assert.notEqual(theme.zed, null);
     const input = buildInput({ snap: HELLO, theme });
     assert.equal(input.theme.editor.background, theme.colors.background);
     assert.equal(input.theme.editor.foreground, theme.colors.foreground);
     const resolved = resolveSpans([[{ text: "function", capture: "keyword" }]], theme);
-    assert.equal(resolved[0][0].color, theme.colors.foreground);
+    assert.ok(/^#[0-9a-f]{6}$/.test(resolved[0][0].color), "expected a real colour, not a crash or a missing value");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -133,13 +133,61 @@ test("readTheme falls back to themes[0] when no appearance matches", () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-test("readTheme returns null zed/vscode when their files are absent, other keys still populated", () => {
+test("readTheme returns null vscode when its file is absent, other keys still populated", () => {
   const dir = scratchDir("omasnap-theme-noopt-");
   writeFileSync(join(dir, "colors.toml"), 'mode = "dark"\naccent = "#111111"\n');
   const t = readTheme(dir);
-  assert.equal(t.zed, null);
   assert.equal(t.vscode, null);
   assert.equal(t.colors.accent, "#111111");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("readTheme synthesizes a generic zed theme from colors.toml when zed-theme.json is absent", () => {
+  // No stock Omarchy theme ships a zed-theme.json — only a handful of
+  // hand-authored community themes do. Without a synthesized fallback,
+  // every one of those installs would render plain, uncoloured text (and,
+  // before this, would have thrown inside highlight() the moment a
+  // recognised language actually needed theme.zed.syntax).
+  const dir = scratchDir("omasnap-theme-synth-");
+  writeFileSync(
+    join(dir, "colors.toml"),
+    [
+      'mode = "dark"',
+      'accent = "#88c0d0"',
+      'background = "#2e3440"',
+      'foreground = "#d8dee9"',
+      'lighter_background = "#3b4252"',
+      'dark_background = "#242933"',
+      'darker_background = "#1c212b"',
+      'red = "#bf616a"',
+      'green = "#a3be8c"',
+      'yellow = "#ebcb8b"',
+      'blue = "#81a1c1"',
+      'magenta = "#b48ead"',
+      'cyan = "#88c0d0"',
+      'orange = "#d08770"',
+    ].join("\n"),
+  );
+  const t = readTheme(dir);
+  assert.notEqual(t.zed, null);
+  assert.equal(t.zed.appearance, "dark");
+  assert.equal(t.zed.style.editorBackground, t.colors.background);
+  assert.equal(t.zed.style.editorForeground, t.colors.foreground);
+  assert.equal(t.zed.syntax.string.color, t.colors.green);
+  assert.equal(t.zed.syntax.comment.fontStyle, "italic");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("readTheme's synthesized zed theme never throws even when colors.toml is missing most keys", () => {
+  const dir = scratchDir("omasnap-theme-synth-minimal-");
+  writeFileSync(join(dir, "colors.toml"), 'mode = "dark"\n');
+  const t = readTheme(dir);
+  assert.notEqual(t.zed, null);
+  // Every colour resolves to *something* real (never undefined, never a
+  // crash) — the exact value doesn't matter here, only that there is one.
+  for (const capture of Object.values(t.zed.syntax)) {
+    assert.match(capture.color, /^#[0-9a-f]{6}$/);
+  }
   rmSync(dir, { recursive: true, force: true });
 });
 

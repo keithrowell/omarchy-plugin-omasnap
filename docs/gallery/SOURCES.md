@@ -42,16 +42,18 @@ overrides the Zed mapping — its `colors.toml` and wallpaper come from the
 stock `osaka-jade` theme underneath, the way Omarchy layers a user theme
 over a stock one of the same name.)
 
-**Catppuccin** and **Rosé Pine** are stock Omarchy themes that, on this
-install, ship no `zed-theme.json` of their own — no stock theme does; Zed
-fidelity today exists only for themes someone has hand-authored one for.
-Their renders use a `zed-theme.json` generated from the theme's own
-`colors.toml` with Omarchy's own generic template
-(`~/.config/omarchy/themed/zed-theme.json.tpl` — the same mapping Omarchy
-uses for Zed's bundled "Omarchy" fallback theme), so the colours are
-faithful to Omarchy's rendition of that theme, just not hand-tuned the way
-the four bespoke ones are. This is a real, current gap — see the inbox stub
-about generating a baseline Zed theme for any Omarchy theme that lacks one.
+**Catppuccin** and **Rosé Pine** are stock Omarchy themes that ship no
+`zed-theme.json` of their own — no stock theme does. When these renders
+were first made, that meant hand-generating one for the gallery from each
+theme's `colors.toml`, using the same mapping a personal Omarchy hook on
+the machine that built this gallery already renders for real Zed
+integration. Omasnap now does exactly that itself, for any theme that
+needs it — `readTheme()` synthesizes a matching `zed-theme.json` on the fly
+(`synthesizeZedTheme` in `lib/theme.mjs`; see "Where the colours come
+from" in the README) — so these two renders are no longer a gallery-only
+workaround: any install colours a theme like this the same way, live,
+whether or not the machine has that personal customisation. A theme's own
+`zed-theme.json`, when it has one, always wins.
 
 ## Reproducing a render
 

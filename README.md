@@ -189,6 +189,17 @@ colours, `vscode-theme.json` for VS Code's. The theme is read fresh on every
 snap, so switching the Omarchy theme changes the very next image with no
 restart. Nothing is ever hard-coded.
 
+**No stock Omarchy theme ships a `zed-theme.json`** — only a handful of
+hand-authored community themes do (see
+[`docs/gallery/SOURCES.md`](docs/gallery/SOURCES.md) for which ones).
+Rather than falling back to flat, uncoloured text for everyone else,
+`readTheme()` synthesizes a reasonable one from `colors.toml`
+(`synthesizeZedTheme` in `lib/theme.mjs`) — the same generic
+capture-to-colour mapping (keywords, strings, comments, types, …) a
+personal Omarchy hook can render for real Zed integration, computed here so
+every install looks colourful, not only ones with that customisation. A
+theme's own `zed-theme.json`, when it has one, always wins.
+
 ## Non-goals
 
 - No editor plugins or extensions — Omasnap never asks Zed or VS Code to do anything.
