@@ -1,5 +1,9 @@
 # Omasnap
 
+**Status: beta (v0.9.0).** Working end to end and tested on real hardware,
+but not yet submitted to [plugins.omarchy.org](https://plugins.omarchy.org)
+— install it directly from this repo for now (below).
+
 Turn selected code into a beautiful, unmistakably Omarchy image for a social
 post, a doc, or a chat — like codesnap.dev without the macOS traffic lights,
 wearing the live Omarchy theme, and coloured exactly the way the editor it

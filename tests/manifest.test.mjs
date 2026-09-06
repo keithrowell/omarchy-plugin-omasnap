@@ -11,7 +11,7 @@ test("manifest.json has the required Omarchy plugin fields", () => {
   assert.equal(manifest.schemaVersion, 1);
   assert.equal(manifest.id, "com.keithrowell.omasnap");
   assert.equal(manifest.name, "Omasnap");
-  assert.equal(manifest.version, "0.1.0");
+  assert.equal(manifest.version, "0.9.0");
   assert.equal(manifest.license, "MIT");
   assert.equal(typeof manifest.author, "string");
   assert.ok(manifest.author.length > 0);
