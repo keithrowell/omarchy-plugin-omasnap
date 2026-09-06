@@ -226,6 +226,15 @@ bin/build-grammars                 # compile vendored grammars (first run only; 
 bin/build-grammars --check         # report what's missing/stale without building
 ```
 
+`bin/omasnap --fixture` (headless) always runs fresh QML — but the live
+binding talks over IPC to the Omarchy shell process, which loads
+`app/Service.qml`/`app/Overlay.qml`/`app/Snap.qml` once and (on this build)
+never re-reads them: the shell runs with `QS_DISABLE_FILE_WATCHER=1`, so it
+does not hot-reload, and `omarchy plugin disable`/`enable` does not force a
+reload either (same process, same stale code). After changing anything
+under `app/`, run `omarchy-restart-shell` before testing the live binding —
+skipping this makes a real fix look unfixed.
+
 `bin/omasnap --fixture F --out P` renders a fixture (a JSON file shaped like
 `tests/fixtures/render/*.json`: filename, language, editor, font and
 highlighted lines) straight to a PNG, headlessly, with no selection or editor
