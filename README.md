@@ -3,9 +3,11 @@
 Turn selected code into a beautiful, unmistakably Omarchy image for a social
 post, a doc, or a chat — like codesnap.dev without the macOS traffic lights,
 wearing the live Omarchy theme, and coloured exactly the way the editor it
-was snapped from shows the code. It is a standalone Quickshell app
-(`qs -p app/Main.qml`), started by a Hyprland keybinding, not an editor
-extension.
+was snapped from shows the code. It is an Omarchy shell plugin, not an
+editor extension: a Hyprland keybinding runs the selection/highlight
+pipeline as a plain script, then asks the already-running Omarchy shell (see
+[ADR-0003](docs/adr/0003-shell-service-for-marketplace-listing.md)) to show
+the preview.
 
 ![Omasnap preview](preview.png)
 
@@ -102,7 +104,22 @@ touching anything; `--uninstall` reverses it; running it again reports
 - compiles the vendored Zed-highlighting grammars (`bin/build-grammars`,
   below) and reports what it built, without failing the install if that
   step has a problem;
-- prints, but never applies, the Hyprland binding below.
+- prints, but never applies, the Hyprland binding below;
+- reports whether the shell plugin (below) is already enabled.
+
+## Enable the shell plugin
+
+`bin/install` never does this for you — it's a real change to the running
+shell, unlike the files above. One command, once:
+
+```bash
+omarchy plugin enable com.keithrowell.omasnap
+```
+
+The binding below does nothing without it (Omasnap is a shell service —
+see [ADR-0003](docs/adr/0003-shell-service-for-marketplace-listing.md)).
+If `omarchy plugin enable` reports the plugin as unknown right after
+installing, run `omarchy-shell shell rescanPlugins` first.
 
 ## Binding
 

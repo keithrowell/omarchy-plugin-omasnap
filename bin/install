@@ -34,6 +34,7 @@ LAUNCH="$ROOT/bin/omasnap"
 # directory this runs from (the binding is shared across machines).
 PLUGIN_DIR='~/.config/omarchy/plugins/com.keithrowell.omasnap'
 PLUGIN="$HOME/.config/omarchy/plugins/com.keithrowell.omasnap"
+PLUGIN_ID="com.keithrowell.omasnap"
 
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 APP_DIR="$DATA_HOME/applications"
@@ -223,3 +224,25 @@ say ""
 say "-- Omasnap: snap the selected code into an Omarchy-styled image."
 say "o.bind(\"SUPER + ALT + SHIFT + S\", \"Omasnap\", \"$action\")"
 say "o.window({ title = \"^(Omasnap)\$\" }, { float = true, center = true })"
+
+# The plugin (ADR-0003) must also be enabled in the Omarchy shell — the
+# binding above talks to it over IPC, and does nothing until then. Printed,
+# never run, like the binding: enabling reloads the live shell, a real
+# system-state change this script never makes on its own. `omarchy plugin
+# list --json` reports current state without side effects, so a second
+# `bin/install` run after enabling reports it, rather than repeating advice
+# already followed.
+if command -v omarchy-plugin-list >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+  enabled=$(omarchy-plugin-list --json 2>/dev/null | jq -r --arg id "$PLUGIN_ID" 'map(select(.id == $id)) | .[0].enabled // false')
+  if [[ $enabled == "true" ]]; then
+    say ""
+    say "Shell plugin: already enabled ($PLUGIN_ID)"
+  else
+    say ""
+    say "Shell plugin: not yet enabled. Run:"
+    say "  omarchy plugin enable $PLUGIN_ID"
+  fi
+else
+  say ""
+  say "Shell plugin: run 'omarchy plugin enable $PLUGIN_ID' (could not check current state: omarchy or jq not found)"
+fi

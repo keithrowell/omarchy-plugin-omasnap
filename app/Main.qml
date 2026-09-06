@@ -5,12 +5,17 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import "Grab.js" as Grab
 
-// Entry point: `qs -p app/Main.qml` (via bin/omasnap). Three modes, chosen
-// by environment variables `bin/omasnap` sets (see the plans for specs
-// 0004 and 0006 — `qs` forwards no CLI arguments to QML):
+// Entry point for the standalone invocations of `qs -p app/Main.qml` (via
+// bin/omasnap's fixture/benchmark modes, or by hand for testing). The real
+// interactive path no longer runs through here at all — see ADR-0003:
+// `bin/omasnap` triggers the persistent `app/Service.qml`, loaded by the
+// Omarchy shell, over IPC instead. Three modes, chosen by environment
+// variables (`qs` forwards no CLI arguments to QML):
 //
-// - `OMASNAP_MODE=preview`: the live preview (spec 0006). Loads
-//   `Preview.qml`, which reads `OMASNAP_INPUT`/`OMASNAP_REQUEST` itself.
+// - `OMASNAP_MODE=preview`: a standalone `Overlay.qml` for testing the
+//   live preview UI without a running Omarchy shell or an enabled plugin
+//   — reads `OMASNAP_INPUT`/`OMASNAP_REQUEST`/etc. itself and quits the
+//   process when the overlay closes (see the component below).
 // - `OMASNAP_INPUT` set (and not preview mode): render mode. Load the JSON
 //   at that path (built by `lib/input.mjs` from a fixture and the current
 //   theme), show it in `Snap`, and once it settles, grab it to a PNG at
@@ -42,9 +47,28 @@ ShellRoot {
         sourceComponent: placeholderWindow
     }
 
+    // Standalone test entry point for `Overlay.qml` (ADR-0003): the real,
+    // marketplace-required path is `app/Service.qml`, loaded by the Omarchy
+    // shell and triggered over IPC — this one exists so the same UI can
+    // still be exercised with a bare `qs -p app/Main.qml`, no running shell
+    // or enabled plugin required, the way it always could. It fills the
+    // same properties Service.qml passes as IPC arguments, from the same
+    // environment variables `bin/omasnap` used to set before ADR-0003.
+    // Overlay.qml never calls `Qt.quit()` itself (see its header comment),
+    // so this wrapper quits the process when the overlay reports closed.
     Component {
         id: previewWindow
-        Preview {}
+
+        Overlay {
+            inputPath: Quickshell.env("OMASNAP_INPUT") || ""
+            requestPath: Quickshell.env("OMASNAP_REQUEST") || ""
+            rootDir: Quickshell.env("OMASNAP_ROOT") || ""
+            previewPngPath: Quickshell.env("OMASNAP_PREVIEW_PNG") || ""
+            autoMode: Quickshell.env("OMASNAP_AUTO") || ""
+            shotPathOverride: Quickshell.env("OMASNAP_SHOT_PATH") || ""
+
+            Component.onCompleted: overlayClosed.connect(Qt.quit)
+        }
     }
 
     Component {

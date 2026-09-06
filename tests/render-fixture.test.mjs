@@ -109,10 +109,16 @@ test("buildInput: a missing wallpaper file resolves to null", () => {
   assert.equal(input.theme.wallpaper, null);
 });
 
-test("buildInput: the fixture theme's own wallpaper resolves to its real omarchy.webp path", () => {
+test("buildInput: the fixture theme's own wallpaper resolves to an absolute path", () => {
+  // The marketplace's plugin validator forbids symlinks anywhere in the
+  // repo, so this fixture's `background` is a plain file, not the symlink
+  // a real Omarchy theme directory uses — readTheme()'s symlink-following
+  // is covered directly, with a runtime-created symlink, in
+  // tests/theme.test.mjs ("resolves wallpaper through a real symlink").
   const input = buildInput({ snap: HELLO, theme: GRUVBOX });
   assert.ok(input.theme.wallpaper, "expected a wallpaper path");
-  assert.ok(input.theme.wallpaper.endsWith("omarchy.webp"));
+  assert.ok(isAbsolute(input.theme.wallpaper));
+  assert.ok(input.theme.wallpaper.endsWith("background"));
 });
 
 test("buildInput: a relative --wallpaper resolves to an absolute path (Snap.qml needs one for its file:// URL)", () => {

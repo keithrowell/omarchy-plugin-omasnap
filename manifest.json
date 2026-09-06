@@ -6,6 +6,7 @@
   "author": "Keith Rowell",
   "license": "MIT",
   "description": "Turn selected code into a beautiful, unmistakably Omarchy image for a social post, a doc, or a chat.",
-  "kinds": [],
-  "keepLoaded": false
+  "kinds": ["service"],
+  "entryPoints": { "service": "app/Service.qml" },
+  "keepLoaded": true
 }

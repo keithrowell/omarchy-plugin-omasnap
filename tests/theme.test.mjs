@@ -77,7 +77,11 @@ test("readTheme(gruvbox-dark) resolves name, mode, zed, vscode, wallpaper", () =
   assert.equal(t.zed.syntax.comment.fontStyle, "italic");
   assert.equal(t.vscode.type, "dark");
   assert.ok(Array.isArray(t.vscode.tokenColors[0].scope));
-  assert.ok(t.wallpaper.endsWith(join("theme", "backgrounds", "omarchy.webp")));
+  // A real Omarchy theme's `background` is a symlink into `backgrounds/`;
+  // this fixture's is a plain file (the marketplace's validator forbids
+  // symlinks anywhere in the repo — ADR-0003, and see the dedicated
+  // symlink-following test above).
+  assert.ok(t.wallpaper.endsWith(join("gruvbox-dark", "background")));
   assert.ok(t.wallpaper.startsWith("/"));
 });
 
@@ -143,6 +147,25 @@ test("readTheme resolves wallpaper as null when background is absent", () => {
   const dir = scratchDir("omasnap-theme-nowallpaper-");
   writeFileSync(join(dir, "colors.toml"), 'mode = "dark"\n');
   assert.equal(readTheme(dir).wallpaper, null);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("readTheme resolves wallpaper through a real symlink to its target", () => {
+  // A real Omarchy theme's `background` is always a symlink into its
+  // `theme/backgrounds/` directory; the committed fixtures under
+  // tests/fixtures/themes/ use a plain file instead (the marketplace's
+  // plugin validator forbids symlinks anywhere in the repo — ADR-0003), so
+  // this behaviour is covered here with a symlink created at test time,
+  // never committed.
+  const dir = scratchDir("omasnap-theme-symlink-");
+  const themeDir = join(dir, "theme");
+  const backgroundsDir = join(themeDir, "backgrounds");
+  mkdirSync(backgroundsDir, { recursive: true });
+  writeFileSync(join(themeDir, "colors.toml"), 'mode = "dark"\n');
+  const target = join(backgroundsDir, "wallpaper.webp");
+  writeFileSync(target, "not a real image, just needs to exist");
+  symlinkSync(target, join(dir, "background"));
+  assert.equal(readTheme(themeDir).wallpaper, target);
   rmSync(dir, { recursive: true, force: true });
 });
 

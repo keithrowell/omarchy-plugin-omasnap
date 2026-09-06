@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -17,6 +17,10 @@ test("manifest.json has the required Omarchy plugin fields", () => {
   assert.ok(manifest.author.length > 0);
   assert.equal(typeof manifest.description, "string");
   assert.ok(manifest.description.length > 0);
-  assert.deepEqual(manifest.kinds, []);
-  assert.equal(manifest.keepLoaded, false);
+  // ADR-0003: the marketplace's validator requires a non-empty `kinds`
+  // array, each with a matching `entryPoints` file that actually exists.
+  assert.deepEqual(manifest.kinds, ["service"]);
+  assert.deepEqual(manifest.entryPoints, { service: "app/Service.qml" });
+  assert.equal(manifest.keepLoaded, true);
+  assert.ok(existsSync(resolve(ROOT, manifest.entryPoints.service)));
 });

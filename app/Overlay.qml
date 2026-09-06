@@ -5,19 +5,24 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import "Grab.js" as Grab
 
-// The live preview window (spec 0006): `bin/omasnap` starts `qs` with
-// `OMASNAP_MODE=preview` and this reads its own inputs straight from the
-// environment (see `app/Main.qml`'s header) — `OMASNAP_INPUT` (the JSON
-// `lib/snap.mjs` wrote, exactly the shape render mode's `Snap` already
-// renders, plus `warnings`/`languages`/`detected`), `OMASNAP_REQUEST` (the
-// paths `lib/snap.mjs` needs again to re-highlight with a different
-// language), `OMASNAP_ROOT` (this checkout, for the `node` re-highlight
-// call) and `OMASNAP_PREVIEW_PNG` (a scratch path for the Copy action's
-// rendered PNG, cleaned up by `bin/omasnap`'s EXIT trap). `OMASNAP_AUTO`
-// (`copy` | `save` | `shot` | `none`) drives the window unattended, the way
-// Pacman's `PACMAN_DEBUG_KEYS` does, for the builder/reviewer to exercise
-// Copy/Save without a human and even with the display locked (grabs still
-// render offscreen).
+// The live preview window (ADR-0003). Reusable, host-agnostic component:
+// every input arrives as a constructor property, never read from the
+// environment — `app/Service.qml` creates one of these per snap (the
+// persistent, marketplace-required path), passing the paths bin/omasnap's
+// selection/highlight pipeline already wrote; `app/Main.qml`'s own
+// `OMASNAP_MODE=preview` entry point creates one too, for standalone
+// testing without the Omarchy shell, filling the same properties from
+// `Quickshell.env(...)` itself.
+//
+// This component never calls `Qt.quit()` — that would end whichever
+// process hosts it, which is catastrophic when the host is the shared
+// Omarchy shell process. Every place the old standalone window used to
+// quit instead calls `closeOverlay()`, which emits `overlayClosed` (a
+// distinct signal from Window's own built-in `closed`, which still fires
+// on a real WM-initiated close and is also wired to `closeOverlay()`
+// below) and `destroy()`s this object; each host decides what
+// "overlayClosed" means for it (the service clears its tracked reference,
+// Main.qml's test entry point quits the process — see there).
 //
 // Every colour below comes from `input.theme.colors`; nothing is a literal
 // (the `Qt.rgba(0, 0, 0, 1)` fallbacks below are the same "nothing has
@@ -27,6 +32,8 @@ import "Grab.js" as Grab
 FloatingWindow {
     id: previewWindow
     title: "Omasnap"
+
+    signal overlayClosed()
 
     // Stay unmapped until the frame has its real, final size. `implicitWidth`
     // /`implicitHeight` below settle across several bindings re-evaluating as
@@ -61,12 +68,15 @@ FloatingWindow {
     // settled — same reasoning as Main.qml's render mode.
     readonly property int settleDelayMs: 250
 
-    // --- Environment (bin/omasnap sets all of these; qs forwards no argv) ---
-    readonly property string inputPath: Quickshell.env("OMASNAP_INPUT") || ""
-    readonly property string requestPath: Quickshell.env("OMASNAP_REQUEST") || ""
-    readonly property string rootDir: Quickshell.env("OMASNAP_ROOT") || ""
-    readonly property string previewPngPath: Quickshell.env("OMASNAP_PREVIEW_PNG") || ""
-    readonly property string autoMode: Quickshell.env("OMASNAP_AUTO") || ""
+    // --- Inputs (set by whoever creates this: Service.qml or Main.qml's
+    // standalone test entry point) ---
+    property string inputPath: ""
+    property string requestPath: ""
+    property string rootDir: ""
+    property string previewPngPath: ""
+    property string autoMode: ""
+    // Empty means "use the default path"; see `shotPath` below.
+    property string shotPathOverride: ""
     // OMASNAP_AUTO="lang:<id>" (e.g. "lang:python", "lang:plain") drives the
     // language selector through the exact same code path a popup click
     // uses (selectLanguage), waits for the re-highlight to land, then takes
@@ -75,7 +85,7 @@ FloatingWindow {
     readonly property string autoLangId: autoMode.indexOf("lang:") === 0 ? autoMode.slice("lang:".length) : ""
     // Where OMASNAP_AUTO=shot|lang:<id> saves a picture of this bar for
     // review; overridable so a reviewer/builder can point it anywhere.
-    readonly property string shotPath: Quickshell.env("OMASNAP_SHOT_PATH") || (rootDir + "/docs/agentile/specs/0006-preview-and-capture/preview-shot.png")
+    readonly property string shotPath: shotPathOverride !== "" ? shotPathOverride : (rootDir + "/docs/agentile/specs/0006-preview-and-capture/preview-shot.png")
 
     property var input: null
     property var request: null
@@ -114,7 +124,14 @@ FloatingWindow {
 
     color: colors ? colors.background : Qt.rgba(0, 0, 0, 1)
 
-    onClosed: Qt.quit()
+    // Emits `closed` and destroys this overlay. Every place that used to
+    // call `Qt.quit()` calls this instead — see the header comment.
+    function closeOverlay() {
+        previewWindow.overlayClosed();
+        previewWindow.destroy();
+    }
+
+    onClosed: previewWindow.closeOverlay()
 
     // --- Data ----------------------------------------------------------
     FileView {
@@ -194,16 +211,16 @@ FloatingWindow {
         notifyProcess.running = true;
     }
 
-    // Quits once the auto-triggered action's own notification has finished,
+    // Closes once the auto-triggered action's own notification has finished,
     // so `OMASNAP_AUTO=copy|save` is verifiable end to end (notification
-    // text included) without a human, then exits — never left running.
+    // text included) without a human, then closes — never left open.
     function finishAutoIfDue() {
         // Also covers a failed OMASNAP_AUTO=lang:<id> re-highlight (its
         // "Re-highlight failed" notification runs through here too, via
         // languageProcess.onExited) — the window must not sit open forever
         // just because the CLI call failed.
         if (previewWindow.autoMode === "copy" || previewWindow.autoMode === "save" || previewWindow.autoLangId !== "") {
-            Qt.quit();
+            previewWindow.closeOverlay();
         }
     }
 
@@ -253,7 +270,7 @@ FloatingWindow {
     function doShot() {
         contentRoot.grabToImage(function (result) {
             result.saveToFile(previewWindow.shotPath);
-            Qt.quit();
+            previewWindow.closeOverlay();
         });
     }
 
@@ -268,11 +285,11 @@ FloatingWindow {
             // reloads) when the requested language is already current —
             // going through it anyway for an already-current language would
             // leave nothing to ever trigger autoLangShotTimer, and the
-            // window would sit open forever instead of quitting.
+            // window would sit open forever instead of closing.
             const current = previewWindow.currentLanguage === null ? "plain" : previewWindow.currentLanguage;
             if (previewWindow.autoLangId === current) previewWindow.doShot();
             else previewWindow.selectLanguage(previewWindow.autoLangId);
-        } else Qt.quit(); // "none" (or an unrecognised value): just prove the window opened cleanly.
+        } else previewWindow.closeOverlay(); // "none" (or an unrecognised value): just prove the window opened cleanly.
     }
 
     Timer {
@@ -282,7 +299,7 @@ FloatingWindow {
     }
 
     // Fires once `inputFile`'s onLoaded sees the OMASNAP_AUTO=lang:<id>
-    // re-highlight's own reload land (see there); doShot() saves and quits.
+    // re-highlight's own reload land (see there); doShot() saves and closes.
     Timer {
         id: autoLangShotTimer
         interval: previewWindow.settleDelayMs
@@ -325,7 +342,7 @@ FloatingWindow {
                     previewWindow.doSave();
                     event.accepted = true;
                 } else if (event.key === Qt.Key_Escape) {
-                    Qt.quit();
+                    previewWindow.closeOverlay();
                     event.accepted = true;
                 } else if (event.key === Qt.Key_Left) {
                     previewWindow.cycleLanguage(-1);
@@ -493,7 +510,7 @@ FloatingWindow {
                             id: closeMouse
                             anchors.fill: parent
                             hoverEnabled: true
-                            onClicked: Qt.quit()
+                            onClicked: previewWindow.closeOverlay()
                         }
                     }
                 }
