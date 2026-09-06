@@ -5,7 +5,7 @@
 | `01-ruby-push-kanagawa.png` | A realtime push demo, cut down from DaisyStack's own — Ruby | Kanagawa |
 | `02-go-ristretto.png` | A bounded worker pool — Go | Ristretto |
 | `03-rust-catppuccin.png` | `sigmoid`/`softmax` — Rust | Catppuccin |
-| `04-plaintext-rose-pine.png` | *The Zen of Python* — plain text, no editor | Rosé Pine (light) |
+| `04-ruby-quotes-rose-pine.png` | Quotes on why Ruby is beautiful — plain text, no editor | Rosé Pine (light) |
 | `05-fortran77-nord.png` | Trapezoidal-rule integration — Fortran 77 | Nord |
 | `06-delphi-everforest.png` | A small stack class — Delphi (Object Pascal) | Everforest |
 | `07-vax-macro32-osaka-jade.png` | A greeting routine — VAX MACRO-32 | Osaka Jade |
@@ -20,7 +20,12 @@
 - **The worker pool** (Go) and **`sigmoid`/`softmax`** (Rust) were written
   for this gallery; the Rust is adapted from a forward-pass building block
   in Keith Rowell's `neural_network` project.
-- **The Zen of Python**: Tim Peters' well-known PEP 20 aphorisms.
+- **The Ruby quotes**: three real, attributed quotes on why Ruby is
+  considered beautiful — Yukihiro "Matz" Matsumoto (Ruby's creator) on
+  designing for programmer happiness and on Ruby's simple-looking,
+  intricate design; David Heinemeier Hansson on Ruby as "the most
+  beautiful, poetic, and productive programming language"; and MINASWAN
+  ("Matz is nice and so we are nice"), the community's own motto.
 - **Fortran 77, Delphi, VAX MACRO-32, 6809 assembly**: short, idiomatic
   examples written for this gallery — real syntax, not lifted from any
   specific archive. The VAX and 6809 examples reflect real hardware (a
@@ -69,7 +74,8 @@ then:
 bin/omasnap --fixture fixture.json --out out.png --theme-dir <themeDir> --wallpaper <themeDir>/backgrounds/<file>
 ```
 
-The gallery images use a wider outer margin than a real snap on this
-machine currently would (its live Hyprland `gaps_out` is 0) — enough to
-show the wallpaper clearly. Pass a `look` object to `buildInput()` directly
-to override it; the CLI itself doesn't expose that flag.
+Every gallery image is a real, unmodified render — the same margin and
+padding floors `app/Snap.qml` applies to any snap, on any Hyprland setup,
+including one (like this machine's) with `gaps_out` at 0. Only the theme
+and wallpaper differ per image, both through the CLI's own `--theme-dir`
+and `--wallpaper` flags — nothing gallery-only is involved.

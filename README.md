@@ -74,7 +74,7 @@ piece of code came from and how to reproduce a render.
 | | |
 |---|---|
 | ![DaisyStack's realtime push, Kanagawa](docs/gallery/01-ruby-push-kanagawa.png) A realtime push demo (Ruby, from DaisyStack) — **Kanagawa** | ![A bounded worker pool, Ristretto](docs/gallery/02-go-ristretto.png) A bounded worker pool (Go) — **Ristretto** |
-| ![sigmoid and softmax, Catppuccin](docs/gallery/03-rust-catppuccin.png) `sigmoid`/`softmax` (Rust) — **Catppuccin** | ![The Zen of Python, Rosé Pine](docs/gallery/04-plaintext-rose-pine.png) *The Zen of Python* — plain text, no editor — **Rosé Pine** |
+| ![sigmoid and softmax, Catppuccin](docs/gallery/03-rust-catppuccin.png) `sigmoid`/`softmax` (Rust) — **Catppuccin** | ![Quotes on why Ruby is beautiful, Rosé Pine](docs/gallery/04-ruby-quotes-rose-pine.png) Quotes on why Ruby is beautiful — plain text, no editor — **Rosé Pine** |
 | ![Trapezoidal integration, Nord](docs/gallery/05-fortran77-nord.png) Trapezoidal integration (**Fortran 77**) — Nord | ![A stack class, Everforest](docs/gallery/06-delphi-everforest.png) A stack class (**Delphi**) — Everforest |
 | ![A VAX MACRO-32 routine, Osaka Jade](docs/gallery/07-vax-macro32-osaka-jade.png) A greeting routine (**VAX MACRO-32**, 1980s DEC minicomputer assembly) — Osaka Jade | ![6809 assembly, Retro 82](docs/gallery/08-6809-asm-retro82.png) Clear-screen routine (**6809 assembly**, in the style of the Hitachi Basic Master) — Retro 82 |
 

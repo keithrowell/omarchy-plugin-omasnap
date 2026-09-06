@@ -59,6 +59,19 @@ Item {
     // a wider desktop gap setting widens this window's own margins too.
     readonly property real outerGapFactor: 3
     readonly property real innerPadFactor: 2
+    // Floors under the two above: a Hyprland setup with a small or zero
+    // `gaps_out` (confirmed live on this machine — 0) otherwise collapses
+    // both to nothing, leaving the last code line hard against the card's
+    // edge and no wallpaper margin to show at all. Scaled by the code
+    // font's size (`S`, same basis as the header factors below) rather
+    // than a flat pixel count, so they stay proportionate at any font
+    // size; a generous `gaps_out` still grows past these unchanged.
+    readonly property real minPaddingFactor: 14
+    readonly property real minOuterMarginFactor: 24
+    // Bottom padding gets extra room on top of the (floored) base padding —
+    // a closing line sitting hard against the card's bottom edge reads as
+    // more cramped than the same gap at the top, next to the header.
+    readonly property real bottomPaddingExtraFactor: 8
     readonly property int minWidth: 480
     readonly property int maxWidth: 1600
     readonly property int minLines: 3
@@ -181,11 +194,13 @@ Item {
         // border below reproduces that exactly.
         const innerRounding = Math.max(0, rounding - borderSize);
 
-        const outerMargin = Math.round(gapsOut * outerGapFactor);
-        const padding = Math.round(gapsOut * innerPadFactor);
-
         // --- Header geometry (see the constants block's comment) ---
         const S = fontSize / baseFontSize;
+
+        const outerMargin = Math.max(Math.round(minOuterMarginFactor * S), Math.round(gapsOut * outerGapFactor));
+        const padding = Math.max(Math.round(minPaddingFactor * S), Math.round(gapsOut * innerPadFactor));
+        const bottomPadding = padding + Math.round(bottomPaddingExtraFactor * S);
+
         const headerPadding = Math.round(headerPaddingFactor * S);
         const headerGap = Math.round(headerGapFactor * S);
         const headerSpacing = Math.round(headerSpacingFactor * S);
@@ -248,7 +263,7 @@ Item {
         const codeWidth = Math.min(longest, maxCodeWidth);
 
         const contentWidth = clamp(gutterWidth + codeWidth + 2 * padding, minWidth, maxWidth);
-        const contentHeight = headerHeight + 2 * padding + renderedLineCount * lineHeight;
+        const contentHeight = headerHeight + padding + bottomPadding + renderedLineCount * lineHeight;
 
         return {
             filename: snapData.filename,
