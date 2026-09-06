@@ -132,6 +132,21 @@ o.bind("SUPER + ALT + SHIFT + S", "Omasnap", "~/.config/omarchy/plugins/com.keit
 o.window({ title = "^(Omasnap)$" }, { float = true, center = true })
 ```
 
+## Uninstall
+
+```bash
+omarchy plugin disable com.keithrowell.omasnap   # stop the shell service
+~/.config/omarchy/plugins/com.keithrowell.omasnap/bin/install --uninstall
+```
+
+`--uninstall` removes only what `bin/install` created and still points at
+this checkout — the plugin symlink (if you installed by cloning straight
+into the plugin directory), the app launcher entry, and the
+`~/.local/bin/omasnap` launcher symlink — reporting anything it finds but
+doesn't own as "left alone". It never touches your own checkout of this
+repo; delete that yourself if you're removing Omasnap entirely. Then remove
+the binding block above from `~/.config/hypr/bindings.lua` by hand.
+
 ## Required packages
 
 ```
