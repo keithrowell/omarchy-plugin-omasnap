@@ -17,3 +17,4 @@ bumping `ZED_TAG`/`ZED_COMMIT` at the top of that script.
 | markdown | https://github.com/zed-industries/zed | v1.18.1 |
 | ruby | https://github.com/zed-extensions/ruby | a88801c1657f01e02acf428b800e0d7ce2d6f241 |
 | lua | https://github.com/zed-extensions/lua | ec8fe51d2f6b33cacccf90fbcddd705a1edbd0cd |
+| go | https://github.com/zed-industries/zed | 5a9b9558db01a6b906cec2fb70a797affdc58cdd |

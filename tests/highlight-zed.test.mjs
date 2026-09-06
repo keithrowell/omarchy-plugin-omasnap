@@ -61,6 +61,14 @@ const FIXTURES = [
     functionName: { text: "greet", capture: "function.definition" },
   },
   {
+    language: "go",
+    file: "sample.go",
+    keyword: { text: "func", capture: "keyword" },
+    string: { text: '"Hello, %s!"', capture: "string" },
+    comment: { text: "// Greets someone by name.", capture: "comment" },
+    functionName: { text: "greet", capture: "function" },
+  },
+  {
     language: "c",
     file: "sample.c",
     keyword: { text: "const", capture: "keyword" },

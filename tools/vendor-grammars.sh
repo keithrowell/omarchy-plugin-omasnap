@@ -67,6 +67,7 @@ GRAMMAR_TABLE=(
   "markdown_inline|https://github.com/zed-industries/tree-sitter-markdown|tree-sitter-markdown-inline|b596e737286780d7bfa9fcddceaeeb754574b352|commit|LICENSE"
   "ruby|https://github.com/tree-sitter/tree-sitter-ruby||71bd32fb7607035768799732addba884a37a6210|commit|LICENSE"
   "lua|https://github.com/tree-sitter-grammars/tree-sitter-lua||10fe0054734eec83049514ea2e718b2a56acd0c9|commit|LICENSE"
+  "go|https://github.com/tree-sitter/tree-sitter-go||2346a3ab1bb3857b48b29d779a1ef9799a248cd7|commit|LICENSE"
 )
 
 # Query pin table: lang | kind (zed-builtin|zed-extension) | path-in-repo | repo-url | ref
@@ -83,6 +84,7 @@ QUERY_TABLE=(
   "markdown|zed-builtin|markdown|https://github.com/zed-industries/zed|$ZED_TAG"
   "ruby|zed-extension|ruby|https://github.com/zed-extensions/ruby|main"
   "lua|zed-extension|lua|https://github.com/zed-extensions/lua|main"
+  "go|zed-builtin|go|https://github.com/zed-industries/zed|$ZED_TAG"
 )
 
 wanted() {
@@ -123,6 +125,18 @@ vendor_grammar() {
 
   local src="$clone"
   [ -n "$subdir" ] && src="$clone/$subdir"
+
+  # tree-sitter-go's last tagged release predates this CLI's ABI (its
+  # checked-in src/parser.c is language version 6; this tree-sitter build
+  # needs 13-15) and no newer tag exists, so regenerate parser.c from
+  # grammar.js with the CLI actually installed here rather than trusting the
+  # committed one. Safe for any grammar: a no-op unless grammar.js is present
+  # and `tree-sitter generate` succeeds; failure is left for the missing-file
+  # check below to report clearly instead of aborting the whole vendor run.
+  if [ -f "$src/grammar.js" ] && command -v tree-sitter >/dev/null 2>&1; then
+    ( cd "$src" && tree-sitter generate ) >/dev/null 2>&1 \
+      && say "grammar: regenerated $name's parser.c with the local tree-sitter CLI (upstream's committed one may predate this CLI's ABI)"
+  fi
 
   rm -rf "$dest"
   mkdir -p "$dest/src"

@@ -124,7 +124,7 @@ larger TypeScript/TSX grammars; later installs are near-instant. Re-run
 `tools/vendor-grammars.sh` (network, dev-time only) to bump a grammar or
 query pin.
 
-**Supported languages:** JavaScript/JSX, TypeScript, TSX, Python, Rust, C,
+**Supported languages:** JavaScript/JSX, TypeScript, TSX, Python, Rust, Go, C,
 Bash, JSON(C), YAML, Markdown (block-level only — see below), Ruby, Lua.
 Anything else falls back to one plain span per line in the theme's editor
 foreground, never an error. Markdown is highlighted with Zed's own *block*

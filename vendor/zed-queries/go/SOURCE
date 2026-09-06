@@ -1,0 +1,5 @@
+url:     https://raw.githubusercontent.com/zed-industries/zed/v1.18.1/crates/grammars/src/go/highlights.scm
+repo:    https://github.com/zed-industries/zed
+ref:     5a9b9558db01a6b906cec2fb70a797affdc58cdd
+fetched: 2026-09-06
+licence: see ../LICENSE (Zed's own, GPL-3.0)
