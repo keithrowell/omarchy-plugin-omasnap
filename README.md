@@ -70,12 +70,12 @@ piece of code came from and how to reproduce a render.
 | ![DaisyStack's Timeline component, 2001](docs/gallery/timeline-2001.png) `DaisyStack::Ui::Components::Timeline` (Ruby) — 2001 | ![A generic Go worker pool, Decorative Stitch](docs/gallery/worker-pool-decorative-stitch.png) A bounded worker pool (Go) — Decorative Stitch |
 | ![sigmoid and softmax, Osaka Jade](docs/gallery/activation-osaka-jade.png) `sigmoid`/`softmax` (Rust) — Osaka Jade | ![The Zen of Python, Catppuccin](docs/gallery/zen-catppuccin.png) *The Zen of Python* — plain text, no editor — Catppuccin |
 
-## Install
+## Install on Omarchy
 
 Either clone this repo straight into the plugin directory:
 
 ```bash
-git clone <this-repo> ~/.config/omarchy/plugins/com.keithrowell.omasnap
+git clone https://github.com/keithrowell/omarchy-plugin-omasnap.git ~/.config/omarchy/plugins/com.keithrowell.omasnap
 ~/.config/omarchy/plugins/com.keithrowell.omasnap/bin/install
 ```
 
