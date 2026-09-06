@@ -28,6 +28,19 @@ FloatingWindow {
     id: previewWindow
     title: "Omasnap"
 
+    // Stay unmapped until the frame has its real, final size. `implicitWidth`
+    // /`implicitHeight` below settle across several bindings re-evaluating as
+    // the object tree finishes construction (snapItem starts at 0x0 before
+    // its own `winWidth`/`winHeight` bindings resolve); a `FloatingWindow`
+    // only takes implicitWidth/implicitHeight as a size *hint* at the moment
+    // it is first shown to the compositor, not as a live binding thereafter.
+    // Mapping while still 0x0-ish locks the real Wayland surface at that
+    // early, too-small size, and the code never becomes fully visible even
+    // though the QML-side properties go on to compute the right answer.
+    // Deferring `visible` until content is truly settled means the window
+    // is only ever mapped once, at its final size.
+    visible: snapItem.ready
+
     // --- Named constants (every size/radius/opacity below is one of these) ---
     readonly property int margin: 16
     readonly property int barHeight: 56
