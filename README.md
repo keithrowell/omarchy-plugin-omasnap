@@ -4,14 +4,18 @@
 but not yet submitted to [plugins.omarchy.org](https://plugins.omarchy.org)
 — install it directly from this repo for now (below).
 
-Turn selected code into a beautiful, unmistakably Omarchy image for a social
-post, a doc, or a chat — like codesnap.dev without the macOS traffic lights,
-wearing the live Omarchy theme, and coloured exactly the way the editor it
-was snapped from shows the code. It is an Omarchy shell plugin, not an
-editor extension: a Hyprland keybinding runs the selection/highlight
-pipeline as a plain script, then asks the already-running Omarchy shell (see
-[ADR-0003](docs/adr/0003-shell-service-for-marketplace-listing.md)) to show
-the preview.
+Select some code. Press a key. Get a gorgeous, unmistakably Omarchy image of
+it — on the clipboard, ready to paste into a post, a doc, a chat. Like
+codesnap.dev, but with the macOS traffic lights thrown out, wearing your
+*actual* Omarchy theme, and coloured exactly the way your editor colours
+that code right now — the same syntax highlighting, the same palette, down
+to the pixel.
+
+No editor plugin to install. No settings to configure. Select text anywhere
+— Zed, a terminal, a browser — press the binding, and Omasnap reads the
+current Omarchy theme and the focused window, frames the code like a
+Hyprland tile (real border, real corners, the wallpaper behind it), and
+hands you a PNG.
 
 ![Omasnap preview](preview.png)
 
@@ -54,27 +58,29 @@ logo anywhere.
 
 ### Editors
 
-Zed is colour-exact (tree-sitter + Zed's own `highlights.scm`, see below).
-Anywhere else — a terminal, a browser, another editor — still snaps,
-highlighted the same way, with the language detected from a shebang line
-when there's no filename to go on. **VS Code's own exact colouring
-(TextMate grammars via its `tokenColors`) is next — it's an unclaimed spec
-in the backlog, not yet started.** If you use VS Code, a PR is very
-welcome; see `docs/agentile/inbox.md` and `docs/agentile/specs/` for where
-that work is tracked, and `docs/adr/0002-grammar-sourcing.md` for how Zed's
-own grammars were vendored, as the pattern to follow for VS Code's.
+Zed is colour-exact: the same tree-sitter grammars and highlight queries
+Zed itself uses, coloured from the Zed Omarchy theme. Anywhere else — a
+terminal, a browser, another editor — still snaps, highlighted the same
+way, with the language detected from a shebang line when there's no
+filename to go on. VS Code's own exact colouring (its `tokenColors`) is
+next, and not yet started — if you use VS Code, a PR would be very welcome.
 
 ## Gallery
 
-Six real snippets, six themes, all rendered by `bin/omasnap` itself — see
+Eight snippets, eight themes, every image produced by Omasnap itself — see
 [`docs/gallery/SOURCES.md`](docs/gallery/SOURCES.md) for exactly where each
 piece of code came from and how to reproduce a render.
 
-|  |  |
+| | |
 |---|---|
-| ![DaisyStack's realtime push, Gruvbox Dark](docs/gallery/push-gruvbox-dark.png) `DaisyStack::Push` (Ruby) — Gruvbox Dark | ![The same push demo, Rosé Pine](docs/gallery/push-rose-pine.png) The same demo — Rosé Pine (light) |
-| ![DaisyStack's Timeline component, 2001](docs/gallery/timeline-2001.png) `DaisyStack::Ui::Components::Timeline` (Ruby) — 2001 | ![A generic Go worker pool, Decorative Stitch](docs/gallery/worker-pool-decorative-stitch.png) A bounded worker pool (Go) — Decorative Stitch |
-| ![sigmoid and softmax, Osaka Jade](docs/gallery/activation-osaka-jade.png) `sigmoid`/`softmax` (Rust) — Osaka Jade | ![The Zen of Python, Catppuccin](docs/gallery/zen-catppuccin.png) *The Zen of Python* — plain text, no editor — Catppuccin |
+| ![DaisyStack's realtime push, Kanagawa](docs/gallery/01-ruby-push-kanagawa.png) A realtime push demo (Ruby, from DaisyStack) — **Kanagawa** | ![A bounded worker pool, Ristretto](docs/gallery/02-go-ristretto.png) A bounded worker pool (Go) — **Ristretto** |
+| ![sigmoid and softmax, Catppuccin](docs/gallery/03-rust-catppuccin.png) `sigmoid`/`softmax` (Rust) — **Catppuccin** | ![The Zen of Python, Rosé Pine](docs/gallery/04-plaintext-rose-pine.png) *The Zen of Python* — plain text, no editor — **Rosé Pine** |
+| ![Trapezoidal integration, Nord](docs/gallery/05-fortran77-nord.png) Trapezoidal integration (**Fortran 77**) — Nord | ![A stack class, Everforest](docs/gallery/06-delphi-everforest.png) A stack class (**Delphi**) — Everforest |
+| ![A VAX MACRO-32 routine, Osaka Jade](docs/gallery/07-vax-macro32-osaka-jade.png) A greeting routine (**VAX MACRO-32**, 1980s DEC minicomputer assembly) — Osaka Jade | ![6809 assembly, Retro 82](docs/gallery/08-6809-asm-retro82.png) Clear-screen routine (**6809 assembly**, in the style of the Hitachi Basic Master) — Retro 82 |
+
+The last four have no real Zed grammar behind them yet — see
+[`docs/gallery/SOURCES.md`](docs/gallery/SOURCES.md) for how they're
+coloured instead.
 
 ## Install on Omarchy
 
@@ -120,10 +126,9 @@ shell, unlike the files above. One command, once:
 omarchy plugin enable com.keithrowell.omasnap
 ```
 
-The binding below does nothing without it (Omasnap is a shell service —
-see [ADR-0003](docs/adr/0003-shell-service-for-marketplace-listing.md)).
-If `omarchy plugin enable` reports the plugin as unknown right after
-installing, run `omarchy-shell shell rescanPlugins` first.
+The binding below does nothing without it. If `omarchy plugin enable`
+reports the plugin as unknown right after installing, run
+`omarchy-shell shell rescanPlugins` first.
 
 ## Binding
 
@@ -166,7 +171,7 @@ Zed's own highlighting rules — its tree-sitter grammars and `highlights.scm`
 queries, at the versions Zed itself pins — are vendored under `vendor/`
 rather than taken from pacman's `tree-sitter-grammars` packages, so the
 colours are exactly Zed's regardless of what grammar versions Arch happens
-to package (see `docs/adr/0002-grammar-sourcing.md`). `bin/install` runs
+to package. `bin/install` runs
 `bin/build-grammars`, which compiles each `vendor/grammars/<name>/` source
 tree into `vendor/grammars/lib/<name>.so` with the `tree-sitter` CLI
 (idempotent — a second run reports `unchanged`; `bin/build-grammars --check`

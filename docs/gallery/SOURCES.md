@@ -1,67 +1,57 @@
 # Gallery sources
 
-Every image here was produced by `bin/omasnap --fixture` using the real
-theme reader and the real Zed highlighter — nothing here is mocked or hand-
-coloured. Each fixture was built from a real theme's `readTheme()` output
-piped straight into `highlight()`, exactly the path a live snap takes.
-
 | Image | Code | Theme |
 |---|---|---|
-| `push-gruvbox-dark.png` | `LiveRating` (Ruby) — DaisyStack's realtime push demo | Gruvbox Dark |
-| `push-rose-pine.png` | `LiveRating` (Ruby) — same, second theme | Rosé Pine (light) |
-| `timeline-2001.png` | `DaisyStack::Ui::Components::DataDisplay::Timeline` (Ruby) | 2001 |
-| `worker-pool-decorative-stitch.png` | a generic-parameter worker pool (Go) | Decorative Stitch |
-| `activation-osaka-jade.png` | `sigmoid`/`softmax` (Rust) | Osaka Jade |
-| `zen-catppuccin.png` | *The Zen of Python* — plain text, no editor | Catppuccin |
+| `01-ruby-push-kanagawa.png` | A realtime push demo, cut down from DaisyStack's own — Ruby | Kanagawa |
+| `02-go-ristretto.png` | A bounded worker pool — Go | Ristretto |
+| `03-rust-catppuccin.png` | `sigmoid`/`softmax` — Rust | Catppuccin |
+| `04-plaintext-rose-pine.png` | *The Zen of Python* — plain text, no editor | Rosé Pine (light) |
+| `05-fortran77-nord.png` | Trapezoidal-rule integration — Fortran 77 | Nord |
+| `06-delphi-everforest.png` | A small stack class — Delphi (Object Pascal) | Everforest |
+| `07-vax-macro32-osaka-jade.png` | A greeting routine — VAX MACRO-32 | Osaka Jade |
+| `08-6809-asm-retro82.png` | A clear-screen routine, in the style of the Hitachi Basic Master — 6809 assembly | Retro 82 |
 
 ## Code provenance
 
-- **`LiveRating`** and the **Timeline component**: from Keith Rowell's
-  [DaisyStack](https://github.com/) projects (`daisy_stack` and
-  `daisy_stack_playground`), MIT licensed. `LiveRating` demonstrates
-  DaisyStack's `ds_push` realtime layer: a browser click sends an event over
-  the shared channel to a class-level `on_fe_rating` handler, which pushes
-  the new average back to every subscribed browser with
-  `DaisyStack::Push.emit`.
-- **The worker pool** (Go) was written for this gallery: a bounded,
-  generic, `errgroup`-based pool that stops on the first error or on context
-  cancellation.
-- **`sigmoid`/`softmax`** (Rust): from Keith Rowell's `neural_network`
-  project, a from-scratch MNIST network — a real forward-pass building
-  block, unedited beyond the excerpt.
-- **The Zen of Python**: Tim Peters' well-known PEP 20 aphorisms, included
-  as the "plain text, not a supported editor" example — no filename, no
-  editor, so Omasnap falls back to one plain span per line.
+- **The push demo** (Ruby) is a cut-down version of `LiveRating`, from Keith
+  Rowell's DaisyStack project (private repo; MIT licensed) — the same short
+  form DaisyStack's own docs use to show `ds_push`: subscribe once, a
+  component listens, the server emits with `DaisyStack::Push.emit`.
+- **The worker pool** (Go) and **`sigmoid`/`softmax`** (Rust) were written
+  for this gallery; the Rust is adapted from a forward-pass building block
+  in Keith Rowell's `neural_network` project.
+- **The Zen of Python**: Tim Peters' well-known PEP 20 aphorisms.
+- **Fortran 77, Delphi, VAX MACRO-32, 6809 assembly**: short, idiomatic
+  examples written for this gallery — real syntax, not lifted from any
+  specific archive. The VAX and 6809 examples reflect real hardware (a
+  1980s DEC minicomputer; the Hitachi Basic Master, a 1980 Japanese home
+  computer built around the 6809), but the exact bytes are illustrative,
+  not transcribed from a manual.
+
+## How the last four are coloured
+
+Omasnap has no tree-sitter grammar for Fortran, Delphi, VAX assembly, or
+6809 assembly — realistically, it may never need one; these exist to show
+the frame works for anything, not to promise real support for them. Their
+spans were hand-tokenized (a small regex lexer, gallery-only — see
+`docs/gallery/` build notes in the project history) and coloured through
+the theme's own syntax map, the same `zedSyntaxStyle` lookup a real grammar
+result goes through. Every colour is still theme-accurate; only the
+decision of *which word gets which capture* was made by hand instead of by
+a parser.
 
 ## Theme provenance
 
-Four themes are Keith's own, each shipping a bespoke `zed-theme.json` under
-`~/.config/omarchy/themes/<name>/`: **2001**, **Decorative Stitch**,
-**Osaka Jade**, **Gruvbox Dark**. (Osaka Jade's directory there only
-overrides the Zed mapping — its `colors.toml` and wallpaper come from the
-stock `osaka-jade` theme underneath, the way Omarchy layers a user theme
-over a stock one of the same name.)
-
-**Catppuccin** and **Rosé Pine** are stock Omarchy themes that ship no
-`zed-theme.json` of their own — no stock theme does. When these renders
-were first made, that meant hand-generating one for the gallery from each
-theme's `colors.toml`, using the same mapping a personal Omarchy hook on
-the machine that built this gallery already renders for real Zed
-integration. Omasnap now does exactly that itself, for any theme that
-needs it — `readTheme()` synthesizes a matching `zed-theme.json` on the fly
-(`synthesizeZedTheme` in `lib/theme.mjs`; see "Where the colours come
-from" in the README) — so these two renders are no longer a gallery-only
-workaround: any install colours a theme like this the same way, live,
-whether or not the machine has that personal customisation. A theme's own
-`zed-theme.json`, when it has one, always wins.
+**Kanagawa**, **Ristretto**, **Nord**, **Everforest**, and **Retro 82** are
+stock Omarchy themes with no `zed-theme.json` of their own — Omasnap's
+`readTheme()` synthesizes one from each theme's `colors.toml`
+(`synthesizeZedTheme` in `lib/theme.mjs`; see "Where the colours come from"
+in the README), the same mechanism live on every install, not a
+gallery-only trick. **Catppuccin** and **Rosé Pine** are stock themes
+too, coloured the same way. **Osaka Jade** is one of Keith's own themes,
+with a bespoke `zed-theme.json`.
 
 ## Reproducing a render
-
-```
-node lib/theme.mjs   # not a CLI; see the snippet below
-```
-
-Each image was built with a short one-off script equivalent to:
 
 ```js
 import { readTheme } from "./lib/theme.mjs";
@@ -78,3 +68,8 @@ then:
 ```
 bin/omasnap --fixture fixture.json --out out.png --theme-dir <themeDir> --wallpaper <themeDir>/backgrounds/<file>
 ```
+
+The gallery images use a wider outer margin than a real snap on this
+machine currently would (its live Hyprland `gaps_out` is 0) — enough to
+show the wallpaper clearly. Pass a `look` object to `buildInput()` directly
+to override it; the CLI itself doesn't expose that flag.
