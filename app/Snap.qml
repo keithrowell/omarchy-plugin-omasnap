@@ -411,6 +411,7 @@ Item {
             Text {
                 id: glyphText
                 text: mazeGlyph
+                textFormat: Text.PlainText
                 visible: frame !== null && iconFont.status === FontLoader.Ready && fontInfo.family === iconFont.name
                 color: frame ? frame.colors.accent : Qt.rgba(0, 0, 0, 1)
                 font.family: iconFont.name
@@ -510,6 +511,7 @@ Item {
                         horizontalAlignment: Text.AlignRight
                         verticalAlignment: Text.AlignVCenter
                         text: String(index + 1)
+                        textFormat: Text.PlainText
                         color: frame.lineNumberColor
                         font.family: frame.fontFamily
                         font.pixelSize: frame.fontSize
