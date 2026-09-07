@@ -59,11 +59,30 @@ logo anywhere.
 ### Editors
 
 Zed is colour-exact: the same tree-sitter grammars and highlight queries
-Zed itself uses, coloured from the Zed Omarchy theme. Anywhere else — a
-terminal, a browser, another editor — still snaps, highlighted the same
-way, with the language detected from a shebang line when there's no
-filename to go on. VS Code's own exact colouring (its `tokenColors`) is
-next, and not yet started — if you use VS Code, a PR would be very welcome.
+Zed itself uses, coloured from the Zed Omarchy theme. VS Code is colour-exact
+too, a different way: the same TextMate tokenizer VS Code itself runs
+(`vscode-textmate`/`vscode-oniguruma`), against a grammar read live off your
+actual installed VS Code — its own built-in languages, or a marketplace
+extension's, whichever provides one — coloured from **whichever theme VS
+Code is actually showing right now** (`workbench.colorTheme`, resolved to
+its real theme file — see `docs/adr/0006-vscode-active-theme.md`), not
+from Omarchy's own bundled VS Code theme. If you run Gruvbox, Nord, or
+anything else in VS Code instead of Omarchy's theme, that's what Omasnap
+reproduces — the same "however the editor actually shows it" standard Zed
+already gets, not a second, editor-agnostic colour scheme in disguise. A
+language with no installed grammar (this is common for Rust and Go — see
+`lib/vscode-extensions.mjs`, both colour purely via their language server,
+with no static grammar to match) falls back to the generic highlighter
+below.
+
+Anywhere else — a terminal, a browser, another editor — still snaps,
+highlighted generically, with the language detected from a shebang line
+when there's no filename to go on.
+
+Adding another editor means writing one file in `lib/editors/` (see
+`lib/editors/registry.mjs` for the small adapter interface every one of
+these implements) — not finding and extending several hardcoded if/else
+chains.
 
 ## Gallery
 

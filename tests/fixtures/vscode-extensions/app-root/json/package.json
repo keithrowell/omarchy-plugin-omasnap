@@ -1,0 +1,8 @@
+{
+  "name": "json",
+  "contributes": {
+    "grammars": [
+      { "language": "json", "scopeName": "source.json", "path": "./syntaxes/JSON.tmLanguage.json" }
+    ]
+  }
+}

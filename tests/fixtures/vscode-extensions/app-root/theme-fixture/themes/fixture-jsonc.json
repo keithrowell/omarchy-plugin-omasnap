@@ -1,0 +1,14 @@
+{
+  "name": "Fixture JSONC",
+  "type": "dark",
+  "colors": {
+    "editor.foreground": "#e0e0e0",
+
+    // a real-world community theme (jovejonovski.ocean-green) ships
+    // exactly this kind of line comment inside its theme JSON
+    "editor.background": "#101010",
+  },
+  "tokenColors": [
+    { "scope": "keyword", "settings": { "foreground": "#ff00ff" } },
+  ],
+}
