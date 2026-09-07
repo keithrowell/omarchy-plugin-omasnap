@@ -37,17 +37,17 @@ escape hatch for a wrong detection (the python-in-a-markdown-file case).
 
 ## Acceptance criteria
 
-- [ ] `lib/snap.mjs` writes the selection text and the window info into the
+- [x] `lib/snap.mjs` writes the selection text and the window info into the
       request JSON itself, so a `--request` re-highlight needs nothing but
       the request file (owned and cleaned up by `app/Service.qml`).
-- [ ] Re-highlighting from `--request` succeeds after the selection and
+- [x] Re-highlighting from `--request` succeeds after the selection and
       window files recorded by the first run have been deleted (CLI test).
-- [ ] Re-highlight mode still honours `--language plain` and a language id,
+- [x] Re-highlight mode still honours `--language plain` and a language id,
       and still resolves `root` from the request as today.
-- [ ] `bin/omasnap`'s trap comment describes the new ownership accurately
+- [x] `bin/omasnap`'s trap comment describes the new ownership accurately
       (the launcher owns SELECTION/WINDOW for its own lifetime only; the
       request carries what the overlay needs).
-- [ ] All tests pass; a live snap followed by a language change redraws.
+- [x] All tests pass; a live snap followed by a language change redraws.
 
 ## Scope boundary
 
