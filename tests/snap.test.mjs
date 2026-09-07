@@ -236,8 +236,8 @@ test("CLI: produces an input JSON whose .snap passes validateFixture, plus langu
 
     const req = JSON.parse(readFileSync(request, "utf8"));
     assert.ok(req.pictures && typeof req.pictures === "string");
-    assert.equal(req.selection, resolve(selection));
-    assert.equal(req.window, resolve(window));
+    assert.equal(req.text, readFileSync(selection, "utf8"), "the selection text is carried inline, not as a path the launcher will delete");
+    assert.equal(req.windowInfo.class, "dev.zed.Zed", "the window info is carried inline too");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -307,6 +307,31 @@ test("CLI: re-highlighting from --request with --language changes snap.language"
     execFileSync(process.execPath, [SNAP_CLI, "--request", request, "--language", "python", "--out", out, "--theme-dir", GRUVBOX_DIR], { encoding: "utf8" });
     const after = JSON.parse(readFileSync(out, "utf8"));
     assert.equal(after.snap.language, "python");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("CLI: re-highlighting from --request works after the selection and window files are gone (bin/omasnap's trap deletes them at exit)", () => {
+  const dir = scratchDir("omasnap-snap-cli-rehl-gone-");
+  try {
+    const selection = join(dir, "selection.txt");
+    writeFileSync(selection, "const a = 1;\n");
+    const window = writeWindow(dir, { class: "dev.zed.Zed", title: "sample.js — sample.js" });
+    const request = join(dir, "request.json");
+    const out = join(dir, "input.json");
+
+    execFileSync(process.execPath, [SNAP_CLI, "--selection", selection, "--window", window, "--request", request, "--out", out, "--theme-dir", GRUVBOX_DIR], {
+      encoding: "utf8",
+    });
+    rmSync(selection);
+    rmSync(window);
+
+    execFileSync(process.execPath, [SNAP_CLI, "--request", request, "--language", "python", "--out", out, "--theme-dir", GRUVBOX_DIR], { encoding: "utf8" });
+    const after = JSON.parse(readFileSync(out, "utf8"));
+    assert.equal(after.snap.language, "python");
+    assert.equal(after.detected.editor, "zed", "window info survives in the request, not just the selection text");
+    assert.equal(after.detected.filename, "sample.js");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
