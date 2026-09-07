@@ -1,0 +1,17 @@
+Why Ruby
+
+"Programmers often feel joy when they can concentrate on
+the creative side of programming. So Ruby is designed to
+make programmers happy."
+    -- Yukihiro "Matz" Matsumoto
+
+"Ruby is simple in appearance, but is very complex inside,
+just like our human body."
+    -- Yukihiro Matsumoto
+
+"The most beautiful, poetic, and productive programming
+language: Ruby."
+    -- David Heinemeier Hansson
+
+MINASWAN -- Matz is nice, and so we are nice.
+    -- Ruby community motto

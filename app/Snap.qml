@@ -1,20 +1,19 @@
 import QtQuick
 import QtQuick.Effects
-import Qt5Compat.GraphicalEffects
 import Quickshell
 
 // The frame: sharp-wallpaper backdrop -> window (Hyprland-style border and
-// rounding, no shadow unless the desktop has one) -> header (Omarchy maze
-// glyph + filename/source, on the same background as the code) -> gutter ->
-// code. Renders one `input` document — the JSON built by `lib/input.mjs`
-// from a fixture (or, from spec 0006, a live selection) plus the current
-// Omarchy theme and this desktop's live Hyprland "look" (border size,
-// rounding, gaps, active-border colour, shadow — see `lib/hypr.mjs`) — set
-// once by `Main.qml`'s render mode.
+// rounding, no shadow unless the desktop has one) -> header (filename/source,
+// on the same background as the code) -> gutter -> code. Renders one `input`
+// document — the JSON built by `lib/input.mjs` from a fixture (or, from spec
+// 0006, a live selection) plus the current Omarchy theme and this desktop's
+// live Hyprland "look" (border size, rounding, gaps, active-border colour,
+// shadow — see `lib/hypr.mjs`) — set once by `Main.qml`'s render mode.
 //
 // Every colour below comes from `input.theme` or `input.look`; nothing is a
-// literal (the font path and the maze glyph's codepoint are the only
-// literals in the chrome — see the constants block).
+// literal (see the constants block). No icon or mark of any kind is drawn —
+// ADR-0008 covers why the header carries no logo, Omarchy's own or
+// otherwise.
 //
 // Sizing follows content (see `buildFrame()`): the window is as wide as its
 // longest line, clamped to [minWidth, maxWidth] with over-width lines
@@ -77,12 +76,6 @@ Item {
     readonly property int minLines: 3
     readonly property int gutterDigitsMin: 2
     readonly property string ellipsis: "…"
-    readonly property string iconFontPath: "/usr/share/fonts/omarchy/omarchy.ttf"
-    // The Omarchy maze mark, first glyph (U+E900) of the vendored `omarchy`
-    // icon font's private-use range (confirmed present via `fc-scan
-    // --format '%{charset}\n'`, which reports `e900-e909`) — verified at
-    // render time by checking `fontInfo.family` below, not just assuming it.
-    readonly property string mazeGlyph: ""
     // Only used when `look.shadowEnabled` (Hyprland's own default is off;
     // most Omarchy desktops never draw this at all).
     readonly property real shadowRange: 12
@@ -90,9 +83,11 @@ Item {
 
     // --- Header constants (the shell's PanelHero + PanelSeparator pattern —
     // see /usr/share/omarchy/shell/Ui/{PanelHero,PanelSeparator}.qml, which
-    // this mirrors on the code's own font size instead of the shell's) ---
-    readonly property real headerGlyphFactor: 2
-    readonly property real headerGapFactor: 14
+    // this mirrors on the code's own font size instead of the shell's —
+    // minus PanelHero's icon slot: every stock user of that pattern (the
+    // Tailscale panel, the Dropbox panel, the agents panel) puts *its own*
+    // icon there, never the platform's; Omasnap has no icon of its own, so
+    // ADR-0008 leaves the slot out rather than filling it with Omarchy's) ---
     readonly property real headerSpacingFactor: 2
     readonly property real headerTitleFactor: 1.167
     readonly property real headerCaptionFactor: 0.833
@@ -131,9 +126,7 @@ Item {
 
     readonly property bool wallpaperSettled: !frame || !frame.wallpaper
         || wallpaperImage.status === Image.Ready || wallpaperImage.status === Image.Error
-    // A font that fails to load must not block the grab — only "still
-    // loading" does; "error" just means the fallback icon (or nothing) draws.
-    readonly property bool ready: frame !== null && wallpaperSettled && iconFont.status !== FontLoader.Loading
+    readonly property bool ready: frame !== null && wallpaperSettled
 
     function clamp(value, lo, hi) {
         return Math.max(lo, Math.min(hi, value));
@@ -202,9 +195,7 @@ Item {
         const bottomPadding = padding + Math.round(bottomPaddingExtraFactor * S);
 
         const headerPadding = Math.round(headerPaddingFactor * S);
-        const headerGap = Math.round(headerGapFactor * S);
         const headerSpacing = Math.round(headerSpacingFactor * S);
-        const glyphSize = Math.round(fontSize * headerGlyphFactor);
         const titleSize = Math.round(fontSize * headerTitleFactor);
         const captionSize = Math.round(fontSize * headerCaptionFactor);
         // A text row's actual ink (ascent + descent) runs somewhat taller
@@ -215,8 +206,7 @@ Item {
         const headerLineHeightRatio = 1.2;
         const titleLineHeight = Math.round(titleSize * headerLineHeightRatio);
         const captionLineHeight = Math.round(captionSize * headerLineHeightRatio);
-        const heroColumnHeight = titleLineHeight + headerSpacing + captionLineHeight;
-        const heroHeight = Math.max(glyphSize, heroColumnHeight);
+        const heroHeight = titleLineHeight + headerSpacing + captionLineHeight;
         const headerHeight = 2 * headerPadding + heroHeight + headerSeparatorHeight;
 
         const title = snapData.filename || snapData.language || "snippet";
@@ -290,9 +280,7 @@ Item {
             winWidth: contentWidth + 2 * borderSize,
             winHeight: contentHeight + 2 * borderSize,
             headerPadding: headerPadding,
-            headerGap: headerGap,
             headerSpacing: headerSpacing,
-            glyphSize: glyphSize,
             titleSize: titleSize,
             captionSize: captionSize,
             titleLineHeight: titleLineHeight,
@@ -323,16 +311,6 @@ Item {
     QtObject {
         id: colorHelper
         property color foreground: frame ? frame.colors.foreground : Qt.rgba(0, 0, 0, 1)
-    }
-
-    // The maze glyph's font: loaded once, independent of `frame`, so its
-    // `status` is stable across every re-render (a live theme switch never
-    // touches the font file). `fontInfo.family` on `glyphText` below is
-    // what actually proves the glyph is drawing from this font and not a
-    // tofu-box substitute — `status === Ready` only means the file parsed.
-    FontLoader {
-        id: iconFont
-        source: "file://" + iconFontPath
     }
 
     // --- 1. Backdrop: the sharp wallpaper, no blur, no darkening overlay ---
@@ -407,50 +385,12 @@ Item {
             color: frame ? frame.editorBackground : Qt.rgba(0, 0, 0, 1)
             antialiasing: true
 
-            // --- Header: PanelHero-style (glyph + title/subtitle), no coloured band ---
-            Text {
-                id: glyphText
-                text: mazeGlyph
-                textFormat: Text.PlainText
-                visible: frame !== null && iconFont.status === FontLoader.Ready && fontInfo.family === iconFont.name
-                color: frame ? frame.colors.accent : Qt.rgba(0, 0, 0, 1)
-                font.family: iconFont.name
-                font.pixelSize: frame ? frame.glyphSize : 24
-                x: frame ? frame.headerPadding : 0
-                y: frame ? frame.headerPadding + (frame.heroHeight - frame.glyphSize) / 2 : 0
-            }
-
-            // Fallback: the font failed to load (or produced tofu) — a
-            // themed-accent icon.png instead; if that is missing too,
-            // `ColorOverlay.visible` below just never turns true and
-            // nothing draws there at all.
-            Image {
-                id: fallbackIconImage
-                visible: false
-                source: frame !== null && (iconFont.status === FontLoader.Error || !glyphText.visible)
-                    ? "file://" + Quickshell.env("HOME") + "/.local/share/omarchy/icon.png" : ""
-                asynchronous: false
-                fillMode: Image.PreserveAspectFit
-                x: frame ? frame.headerPadding : 0
-                y: frame ? frame.headerPadding + (frame.heroHeight - frame.glyphSize) / 2 : 0
-                width: frame ? frame.glyphSize : 24
-                height: frame ? frame.glyphSize : 24
-                sourceSize.width: frame ? frame.glyphSize * exportScale : 24
-                sourceSize.height: frame ? frame.glyphSize * exportScale : 24
-            }
-
-            ColorOverlay {
-                anchors.fill: fallbackIconImage
-                source: fallbackIconImage
-                visible: fallbackIconImage.status === Image.Ready
-                color: frame ? frame.colors.accent : Qt.rgba(0, 0, 0, 1)
-            }
-
+            // --- Header: title/subtitle only — no icon slot, see ADR-0008 ---
             Column {
                 id: headerColumn
-                x: frame ? frame.headerPadding + frame.glyphSize + frame.headerGap : 0
+                x: frame ? frame.headerPadding : 0
                 y: frame ? frame.headerPadding + (frame.heroHeight - (frame.titleLineHeight + frame.headerSpacing + frame.captionLineHeight)) / 2 : 0
-                width: frame ? Math.max(0, frame.contentWidth - 2 * frame.headerPadding - frame.glyphSize - frame.headerGap) : 0
+                width: frame ? Math.max(0, frame.contentWidth - 2 * frame.headerPadding) : 0
                 spacing: frame ? frame.headerSpacing : 0
 
                 Text {
