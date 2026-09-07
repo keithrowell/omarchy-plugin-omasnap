@@ -1,7 +1,8 @@
 ---
 title: Re-highlight from the language selector must not depend on files the launcher has deleted
 slug: rehighlight-self-contained-request
-status: ready
+status: shipped
+shipped_at: 2026-09-07T05:54:01Z
 depends_on: []
 type: bug
 route: foreground
