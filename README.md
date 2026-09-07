@@ -276,6 +276,13 @@ Pacman's `PACMAN_DEBUG_KEYS` plays a similar role for.
 `docs/agentile/` and `docs/adr/` carry the backlog and the decision records
 this project is built from (see `CLAUDE.md`).
 
+## Contributing
+
+Bug reports, feature requests, and pull requests are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the development loop and ground
+rules, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for how we expect
+people to treat each other here.
+
 ## Licence
 
 MIT (see `LICENSE`).

@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest an addition or change to Omasnap
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The outcome you want, not just the feature — e.g. "snap code from Neovim" rather than "add Neovim support".
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: If you have one in mind. No worries if not.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: markdown
+    attributes:
+      value: |
+        A quick read of the project brief (`docs/agentile/brief.md`) and non-goals is worth it before proposing something — Omasnap deliberately stays small and Omarchy-only (no theme picker, no editing/annotation UI, no direct social posting).
