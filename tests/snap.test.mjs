@@ -57,6 +57,15 @@ test("filenameFromTitle(vscode): marker, filename, folder, app name", () => {
   assert.equal(filenameFromTitle("● index.ts - omasnap - Visual Studio Code", "vscode"), "index.ts");
 });
 
+test("filenameFromTitle(vscode): a hyphenated filename is kept whole, not truncated at its own hyphen", () => {
+  assert.equal(filenameFromTitle("omasnap-demo.js - sakusei - Visual Studio Code", "vscode"), "omasnap-demo.js");
+  assert.equal(filenameFromTitle("my-component.tsx - project - Visual Studio Code", "vscode"), "my-component.tsx");
+});
+
+test("filenameFromTitle(vscode): no folder open, a bare dotted filename is used whole", () => {
+  assert.equal(filenameFromTitle("sample.js - Visual Studio Code", "vscode"), "sample.js");
+});
+
 test('filenameFromTitle("other") never guesses, even for an editor-shaped title', () => {
   assert.equal(filenameFromTitle("◐ Claude Code", "other"), null);
 });
