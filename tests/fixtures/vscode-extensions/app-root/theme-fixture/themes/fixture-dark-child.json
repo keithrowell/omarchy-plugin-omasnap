@@ -1,0 +1,8 @@
+{
+  "name": "Fixture Dark Child",
+  "include": "./fixture-dark-base.json",
+  "colors": { "editor.background": "#000000" },
+  "tokenColors": [
+    { "scope": "keyword", "settings": { "foreground": "#00ff00" } }
+  ]
+}

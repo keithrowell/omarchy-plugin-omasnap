@@ -1,0 +1,9 @@
+{
+  "name": "javascript",
+  "contributes": {
+    "grammars": [
+      { "language": "javascript", "scopeName": "source.js", "path": "./syntaxes/JavaScript.tmLanguage.json" },
+      { "scopeName": "source.js.regexp", "path": "./syntaxes/Regular Expressions (JavaScript).tmLanguage" }
+    ]
+  }
+}

@@ -10,7 +10,7 @@ snapped from shows the code. Read `docs/agentile/brief.md` (imported below) and
 
 - Runtime: quickshell/QML app launched with `qs -p app/Main.qml`; Node for logic and tests.
 - Logic: pure JavaScript ES modules in `lib/` — no Qt imports there. QML only renders.
-- Highlighting: tree-sitter + Zed highlight queries for Zed; TextMate grammars via shiki for VS Code; generic Omarchy-palette highlight for anything else. All vendored, no runtime npm.
+- Highlighting: tree-sitter + Zed highlight queries for Zed; `vscode-textmate`/`vscode-oniguruma` for VS Code, against a grammar read live off the installed VS Code and its actual active theme (not vendored — see `docs/adr/0005`/`0006`); live RPC to the running instance for Neovim, which runs in a terminal, not its own window (see `docs/adr/0007`); generic Omarchy-palette highlight for anything else. One small adapter per editor under `lib/editors/` (see `lib/editors/registry.mjs`). Everything else vendored, no runtime npm.
 - Input: Wayland primary selection (`wl-paste --primary`), clipboard fallback; focused editor via `hyprctl activewindow`.
 - Theme: `~/.local/state/omarchy/current/theme/` (`colors.toml`, `zed-theme.json`, `vscode.json`), read on every snap.
 - Output: PNG via QML `grabToImage` to the clipboard (`wl-copy`) and `~/Pictures`.
