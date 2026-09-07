@@ -352,7 +352,7 @@ function scratchScriptEnv(prefix) {
   // so HOME needs a real ~/.local/state/omarchy/current/{theme.name,
   // background,theme/} for readTheme() to find, or "prepare" fails outright.
   cpSync(join(ROOT, "tests", "fixtures", "themes", "gruvbox-dark"), join(home, ".local", "state", "omarchy", "current"), { recursive: true });
-  for (const tool of ["bash", "readlink", "dirname", "mkdir", "rm", "date", "cat"]) {
+  for (const tool of ["bash", "readlink", "dirname", "mkdir", "rm", "date", "cat", "mktemp", "stat", "id"]) {
     const real = join("/usr/bin", tool);
     if (existsSync(real)) symlinkSync(real, join(pathDir, tool));
   }

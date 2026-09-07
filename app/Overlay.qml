@@ -407,6 +407,7 @@ FloatingWindow {
                         id: languageLabel
                         anchors.centerIn: parent
                         text: previewWindow.languageBusy ? "…" : (previewWindow.currentLanguage ?? "plain")
+                        textFormat: Text.PlainText
                         color: previewWindow.colors ? previewWindow.colors.foreground : Qt.rgba(0, 0, 0, 1)
                         font.family: "monospace"
                         font.pixelSize: previewWindow.labelPixelSize
@@ -429,6 +430,7 @@ FloatingWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: previewWindow.input && previewWindow.input.warnings && previewWindow.input.warnings.length > 0
                     text: previewWindow.input && previewWindow.input.warnings ? previewWindow.input.warnings.join(" · ") : ""
+                    textFormat: Text.PlainText
                     color: previewWindow.colors ? previewWindow.colors.yellow : Qt.rgba(0, 0, 0, 1)
                     font.family: "monospace"
                     font.pixelSize: previewWindow.smallPixelSize
@@ -454,6 +456,7 @@ FloatingWindow {
                             id: copyLabel
                             anchors.centerIn: parent
                             text: "Copy ⏎"
+                            textFormat: Text.PlainText
                             color: previewWindow.colors ? previewWindow.colors.background : Qt.rgba(0, 0, 0, 1)
                             font.family: "monospace"
                             font.pixelSize: previewWindow.labelPixelSize
@@ -478,6 +481,7 @@ FloatingWindow {
                             id: saveLabel
                             anchors.centerIn: parent
                             text: "Save S"
+                            textFormat: Text.PlainText
                             color: previewWindow.colors ? previewWindow.colors.foreground : Qt.rgba(0, 0, 0, 1)
                             font.family: "monospace"
                             font.pixelSize: previewWindow.labelPixelSize
@@ -502,6 +506,7 @@ FloatingWindow {
                             id: closeLabel
                             anchors.centerIn: parent
                             text: "Close Esc"
+                            textFormat: Text.PlainText
                             color: previewWindow.colors ? previewWindow.colors.foreground : Qt.rgba(0, 0, 0, 1)
                             font.family: "monospace"
                             font.pixelSize: previewWindow.labelPixelSize
@@ -547,6 +552,7 @@ FloatingWindow {
                             anchors.leftMargin: previewWindow.buttonPaddingX
                             anchors.verticalCenter: parent.verticalCenter
                             text: modelData
+                            textFormat: Text.PlainText
                             color: previewWindow.colors ? previewWindow.colors.foreground : Qt.rgba(0, 0, 0, 1)
                             font.family: "monospace"
                             font.pixelSize: previewWindow.labelPixelSize

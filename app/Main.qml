@@ -225,6 +225,7 @@ ShellRoot {
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: "Omasnap"
+                        textFormat: Text.PlainText
                         color: window.themeForeground !== "" ? window.themeForeground : systemPalette.windowText
                         font.family: "monospace"
                         font.pixelSize: 32
@@ -233,6 +234,7 @@ ShellRoot {
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: "Select code, press the binding."
+                        textFormat: Text.PlainText
                         color: window.themeForeground !== "" ? window.themeForeground : systemPalette.windowText
                         font.family: "monospace"
                         font.pixelSize: 16
