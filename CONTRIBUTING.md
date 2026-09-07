@@ -27,9 +27,32 @@ node --test tests/*.test.mjs       # every test in the project
 bin/build-grammars                 # compile vendored grammars (first run only; node --test does this too)
 ```
 
-See the README's "Development" section for the fuller loop, including
-`--fixture` rendering and why you need `omarchy-restart-shell` after
-changing anything under `app/`.
+A few more tools:
+
+```bash
+bin/omasnap --benchmark            # time the non-window steps of a live snap (no window opens)
+bin/omasnap --fixture F --out P    # render a fixture JSON (tests/fixtures/render/*.json) to a PNG, headless
+bin/build-grammars --check         # report missing/stale grammars without building
+```
+
+`--fixture` renders the same frame the live window uses, against the
+current theme by default; `--theme-dir` and `--wallpaper` pick another.
+`OMASNAP_AUTO=copy|save|shot|none bin/omasnap` drives the live preview
+unattended, for testing Copy/Save without a human.
+
+**After changing anything under `app/`, run `omarchy-restart-shell`.** The
+Omarchy shell loads `Service.qml`/`Overlay.qml`/`Snap.qml` once and never
+re-reads them (it runs with `QS_DISABLE_FILE_WATCHER=1`), and `omarchy
+plugin disable`/`enable` does not reload them either. Skipping the restart
+makes a real fix look unfixed. `--fixture` always runs fresh QML.
+
+Developing from a checkout elsewhere: clone it, run `bin/install` once to
+symlink it into `~/.config/omarchy/plugins/`, then `omarchy plugin enable
+com.keithrowell.omasnap`. `bin/install --dry-run` shows what it would do,
+`--uninstall` reverses it.
+
+`docs/agentile/` and `docs/adr/` carry the backlog and the decision records
+this project is built from (see `CLAUDE.md`).
 
 ## Ground rules
 
