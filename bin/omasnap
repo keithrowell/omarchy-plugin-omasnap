@@ -134,9 +134,12 @@ if [ -z "$FIXTURE" ]; then
   # to the Omasnap shell service actually succeeds, at which point the trap
   # narrows to just SELECTION/WINDOW (see there): that call returns
   # immediately, long before the preview it triggered is closed, and the
-  # overlay reads REQUEST and writes PREVIEW_PNG for as long as it stays
-  # open. `app/Service.qml` deletes its own three files once that overlay
-  # actually closes (ADR-0003).
+  # overlay reads REQUEST (re-highlighting from it when the language
+  # selector is used) and writes PREVIEW_PNG for as long as it stays open.
+  # That is why `lib/snap.mjs` copies the selection text and window info
+  # *into* REQUEST rather than recording their paths: SELECTION and WINDOW
+  # are gone the moment this script exits. `app/Service.qml` deletes its own
+  # three files once that overlay actually closes (ADR-0003).
   RUNTIME_DIR="$(require_runtime_dir)/omasnap"
   mkdir -p -m 700 "$RUNTIME_DIR"
   verify_private_dir "$RUNTIME_DIR"
@@ -267,6 +270,8 @@ if [ -z "$FIXTURE" ]; then
   # INPUT and PREVIEW_PNG for as long as it stays open, and deletes them
   # itself on close. Narrow the trap so this script's own exit doesn't
   # delete files the still-open preview is about to read or write.
+  # SELECTION and WINDOW stay ours to delete: REQUEST carries their
+  # contents, so nothing reads them after this point.
   trap 'rm -f "$SELECTION" "$WINDOW"' EXIT
 
   exit 0
