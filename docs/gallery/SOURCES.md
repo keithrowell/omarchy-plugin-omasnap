@@ -2,6 +2,7 @@
 
 | Image | Code | Theme |
 |---|---|---|
+| `../hero.png` (README) | `commonIndent`/`sharedPrefix` from Omasnap's own `lib/indent.mjs` — JavaScript, snapped as from Zed | Gruvbox (dark) |
 | `01-ruby-push-kanagawa.png` | A realtime push demo, cut down from DaisyStack's own — Ruby | Kanagawa |
 | `02-go-ristretto.png` | A bounded worker pool — Go | Ristretto |
 | `03-rust-catppuccin.png` | `sigmoid`/`softmax` — Rust | Catppuccin |
