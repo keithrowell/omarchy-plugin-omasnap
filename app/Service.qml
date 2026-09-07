@@ -88,6 +88,74 @@ QtObject {
         stdinEnabled: false
     }
 
+    // --- setup on load, in place of a plugin lifecycle hook Omarchy has no
+    // equivalent of --------------------------------------------------------
+    //
+    // The manifest schema (`omarchy-plugin-validate`) has no `postInstall`/
+    // `setup` field — deliberately, almost certainly: a plugin's own QML
+    // already runs arbitrary code the moment it's enabled, so a second,
+    // separate auto-run-a-script mechanism would just be another attack
+    // surface for no real gain. A service's `Component.onCompleted`
+    // shelling out for its own setup *is* the idiom this ecosystem already
+    // uses instead — `com.keithrowell.doorman`'s `Service.qml` does exactly
+    // this for its own state directories.
+    //
+    // `bin/install` already does everything a fresh install needs —
+    // compiles the vendored tree-sitter grammars (the universal fallback
+    // highlighter every snap that isn't "Zed/VS Code/Neovim successfully
+    // colouring their own text" depends on; without them those snaps
+    // degrade to plain, uncoloured text — see `lib/highlight/zed.mjs`),
+    // writes the desktop file, and links the `~/.local/bin` launcher — and
+    // every step is already idempotent (a no-op "unchanged" once done), so
+    // running it here on every load is cheap and safe, not just on first
+    // install. `manifest.__sourceDir` (set by the shell's own
+    // `PluginRegistry.qml`) is this plugin's actual installed directory —
+    // not `omarchyPath` (the shell's own path) and not any path baked in
+    // here, since a user's dev-clone checkout can live anywhere.
+    Component.onCompleted: root._runSetup();
+
+    function _runSetup() {
+        const sourceDir = root.manifest && root.manifest.__sourceDir;
+        if (!sourceDir) return; // no manifest (a fixture/dev harness with no real plugin install) — nothing to set up
+        root.setupProcess.command = [sourceDir + "/bin/install"];
+        root.setupProcess.running = true;
+    }
+
+    // A notification only when there's something worth surfacing: grammars
+    // actually got (re)compiled just now (first install, or a version
+    // bump that changed the vendored sources), or `bin/install` itself
+    // flagged a real problem (a missing package, a failed grammar build) —
+    // that one's also `console.warn`ed, for whoever does go looking at
+    // `journalctl`/the shell log, but a user hitting a missing dependency
+    // deserves better than a log line nobody's watching. The common case —
+    // everything already set up, nothing to do — stays silent, so this
+    // doesn't nag on every shell restart.
+    function _onSetupDone(output) {
+        const lines = String(output).split("\n");
+        const built = lines.some((line) => line.startsWith("grammar: built"));
+        const problems = lines.filter((line) => /missing|failed/i.test(line));
+        if (problems.length > 0) {
+            console.warn("omasnap: bin/install reported a problem:\n" + problems.join("\n"));
+            root.notifyProcess.command = ["notify-send", "Omasnap", "Setup found a problem:\n" + problems.join("\n")];
+            root.notifyProcess.running = true;
+        } else if (built) {
+            root.notifyProcess.command = ["notify-send", "Omasnap", "Ready to snap — highlighting grammars just finished compiling."];
+            root.notifyProcess.running = true;
+        }
+    }
+
+    property Process setupProcess: Process {
+        stdinEnabled: false
+        stdout: StdioCollector {
+            waitForEnd: true
+            onStreamFinished: root._onSetupDone(text)
+        }
+    }
+
+    property Process notifyProcess: Process {
+        stdinEnabled: false
+    }
+
     // `QtObject` has no default property, unlike `Item`, so the handler
     // must be assigned explicitly rather than nested as a plain child.
     property IpcHandler ipc: IpcHandler {
