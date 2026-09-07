@@ -11,7 +11,12 @@ test("manifest.json has the required Omarchy plugin fields", () => {
   assert.equal(manifest.schemaVersion, 1);
   assert.equal(manifest.id, "com.keithrowell.omasnap");
   assert.equal(manifest.name, "Omasnap");
-  assert.equal(manifest.version, "0.9.0");
+  // The manifest is the only place the version is written (a bump is one
+  // edit, then a `v<version>` tag on the merge): check the shape, not a
+  // pinned string, and make sure nothing else has grown a second copy.
+  assert.match(manifest.version, /^\d+\.\d+\.\d+$/, "version is plain semver");
+  const readme = readFileSync(resolve(ROOT, "README.md"), "utf8");
+  assert.doesNotMatch(readme, /\bv?\d+\.\d+\.\d+\b/, "README repeats no version number; manifest.json is the single source");
   assert.equal(manifest.license, "MIT");
   assert.equal(typeof manifest.author, "string");
   assert.ok(manifest.author.length > 0);

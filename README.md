@@ -1,8 +1,10 @@
 # Omasnap
 
-**Status: beta (v0.9.0).** Working end to end and tested on real hardware,
-but not yet submitted to [plugins.omarchy.org](https://plugins.omarchy.org)
-— install it directly from this repo for now (below).
+**Status: beta.** Working end to end and tested on real hardware, but not
+yet submitted to [plugins.omarchy.org](https://plugins.omarchy.org) —
+install it directly from this repo for now (below). The current version is
+the `version` field in [`manifest.json`](manifest.json); each one is also a
+`v<version>` git tag.
 
 Select some code. Press a key. Get a gorgeous, unmistakably Omarchy image of
 it — on the clipboard, ready to paste into a post, a doc, a chat. Like

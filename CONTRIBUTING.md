@@ -78,6 +78,21 @@ specs under `docs/agentile/specs/` and the ADRs under `docs/adr/` are useful
 background reading if you want to understand why something was built the
 way it was.
 
+## Releasing
+
+The version lives in exactly one place: the `version` field in
+`manifest.json`. Omarchy's updater fast-forwards to the default branch, so
+every merge to `master` is what people install — bump the version in the
+same PR as any user-visible change (patch for a fix, minor for a feature),
+not for docs or refactors. After the merge, tag it:
+
+```
+git tag -a v<version> -m "v<version>" && git push origin v<version>
+```
+
+The README deliberately carries no version number (a test enforces it), so a
+bump is that one edit plus the tag.
+
 ## Licence
 
 By contributing, you agree your contribution is licensed under this
