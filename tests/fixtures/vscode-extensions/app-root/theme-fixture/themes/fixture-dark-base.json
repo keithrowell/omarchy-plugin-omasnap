@@ -1,0 +1,9 @@
+{
+  "name": "Fixture Dark",
+  "type": "dark",
+  "colors": { "editor.foreground": "#e0e0e0", "editor.background": "#1a1a1a" },
+  "tokenColors": [
+    { "scope": "keyword", "settings": { "foreground": "#ff0000" } },
+    { "scope": "comment", "settings": { "foreground": "#888888", "fontStyle": "italic" } }
+  ]
+}

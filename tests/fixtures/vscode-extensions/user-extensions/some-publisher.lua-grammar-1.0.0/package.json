@@ -1,0 +1,8 @@
+{
+  "name": "lua-grammar",
+  "contributes": {
+    "grammars": [
+      { "language": "lua", "scopeName": "source.lua", "path": "./syntaxes/lua.tmLanguage.json" }
+    ]
+  }
+}
