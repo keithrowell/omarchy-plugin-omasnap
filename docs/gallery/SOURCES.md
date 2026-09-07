@@ -39,12 +39,11 @@
 Omasnap has no tree-sitter grammar for Fortran, Delphi, VAX assembly, or
 6809 assembly — realistically, it may never need one; these exist to show
 the frame works for anything, not to promise real support for them. Their
-spans were hand-tokenized (a small regex lexer, gallery-only — see
-`docs/gallery/` build notes in the project history) and coloured through
-the theme's own syntax map, the same `zedSyntaxStyle` lookup a real grammar
-result goes through. Every colour is still theme-accurate; only the
-decision of *which word gets which capture* was made by hand instead of by
-a parser.
+spans were hand-tokenized (`docs/gallery/hand-tokenize.mjs`, a small regex
+lexer that exists only for this gallery) and coloured through the theme's
+own syntax map, the same `zedSyntaxStyle` lookup a real grammar result goes
+through. Every colour is still theme-accurate; only the decision of *which
+word gets which capture* was made by hand instead of by a parser.
 
 ## Theme provenance
 
@@ -59,24 +58,25 @@ with a bespoke `zed-theme.json`.
 
 ## Reproducing a render
 
-```js
-import { readTheme } from "./lib/theme.mjs";
-import { highlight } from "./lib/highlight/zed.mjs";
-import { readEditorFont } from "./lib/fonts.mjs";
-
-const theme = readTheme(themeDir);
-const { lines } = highlight({ text, language, theme });
-const fixture = { filename, language, editor: "zed", font: readEditorFont("zed"), lines };
+```
+node docs/gallery/render.mjs
 ```
 
-then:
-
-```
-bin/omasnap --fixture fixture.json --out out.png --theme-dir <themeDir> --wallpaper <themeDir>/backgrounds/<file>
-```
-
-Every gallery image is a real, unmodified render — the same margin and
+regenerates all eight images (and their fixture JSONs, for inspection) in
+place from the source under `docs/gallery/code/`, through the real,
+unmodified `bin/omasnap --fixture` path for each — the same margin and
 padding floors `app/Snap.qml` applies to any snap, on any Hyprland setup,
 including one (like this machine's) with `gaps_out` at 0. Only the theme
 and wallpaper differ per image, both through the CLI's own `--theme-dir`
-and `--wallpaper` flags — nothing gallery-only is involved.
+and `--wallpaper` flags — nothing gallery-only is involved in the frame
+itself. Pass `--out-dir DIR` to render elsewhere instead of overwriting
+the committed images. The raw renders are then scaled to a uniform 1400px
+width (`magick <file> -resize 1400x`) before committing — the only
+gallery-only step, purely cosmetic (a consistent table), applied after
+every image is already a faithful render.
+
+Osaka Jade's image needs `~/.config/omarchy/themes/osaka-jade/zed-theme.json`
+(Keith's own bespoke Zed theme for it — see "Theme provenance" above); on a
+machine without it, that one image still renders, just via the
+synthesized-from-`colors.toml` fallback every theme without a real Zed
+theme gets, not the exact original.
