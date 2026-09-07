@@ -1,0 +1,46 @@
+name: Bug report
+description: Something in Omasnap is broken or looks wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what did you get instead? A screenshot of the preview window helps a lot.
+    validations:
+      required: true
+
+  - type: input
+    id: editor
+    attributes:
+      label: Editor / source
+      description: Where did you select the code (Zed, VS Code, terminal, browser, ...)?
+    validations:
+      required: true
+
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      description: What language was the selected code, and what did the language selector show?
+
+  - type: input
+    id: theme
+    attributes:
+      label: Omarchy theme
+      description: Output of `basename $(readlink ~/.local/state/omarchy/current/theme)`, if you have it.
+
+  - type: textarea
+    id: version
+    attributes:
+      label: Version / commit
+      description: How you installed Omasnap (plugin store vs. dev checkout) and, if a checkout, `git rev-parse HEAD`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      description: Anything printed to the terminal when running `bin/omasnap` directly, if applicable.
+      render: shell
