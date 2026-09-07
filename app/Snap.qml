@@ -220,10 +220,12 @@ Item {
         const headerHeight = 2 * headerPadding + heroHeight + headerSeparatorHeight;
 
         const title = snapData.filename || snapData.language || "snippet";
-        // "ZED · JAVASCRIPT", "VS CODE · PYTHON", "PLAIN TEXT" (source
-        // omitted for "other", language "PLAIN TEXT" when null) — see the
-        // spec's amended header criterion for the exact mapping.
-        const sourceLabel = snapData.editor === "zed" ? "ZED" : snapData.editor === "vscode" ? "VS CODE" : null;
+        // "ZED · JAVASCRIPT", "VS CODE · PYTHON", "NEOVIM · LUA", "PLAIN
+        // TEXT" (source omitted for "other", language "PLAIN TEXT" when
+        // null) — see the spec's amended header criterion for the exact
+        // mapping.
+        const sourceLabel =
+          snapData.editor === "zed" ? "ZED" : snapData.editor === "vscode" ? "VS CODE" : snapData.editor === "neovim" ? "NEOVIM" : null;
         const languageLabel = snapData.language ? String(snapData.language).toUpperCase() : "PLAIN TEXT";
         const subtitle = [sourceLabel, languageLabel].filter(Boolean).join(" · ");
 

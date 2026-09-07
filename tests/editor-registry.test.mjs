@@ -24,7 +24,7 @@ test("detectEditorContext: a VS Code window class matches the vscode adapter", a
   assert.equal(editor.id, "vscode");
 });
 
-test("detectEditorContext: a terminal window class (not Zed or VS Code) falls to other", async () => {
+test("detectEditorContext: a terminal class with no pid never matches neovim, falls to other", async () => {
   const { editor } = await detectEditorContext({ windowClass: "foot" });
   assert.equal(editor.id, "other");
 });

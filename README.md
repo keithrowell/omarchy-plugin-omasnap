@@ -75,9 +75,23 @@ language with no installed grammar (this is common for Rust and Go — see
 with no static grammar to match) falls back to the generic highlighter
 below.
 
-Anywhere else — a terminal, a browser, another editor — still snaps,
-highlighted generically, with the language detected from a shebang line
-when there's no filename to go on.
+Neovim is colour-exact a third way, and the simplest: since it runs inside
+a terminal (no window of its own to detect), Omasnap finds it in the
+terminal's process tree and asks the *live* Neovim itself — over the RPC
+socket every Neovim instance already exposes — for its current visual
+selection and the exact colours it's already rendering for it
+(`vim.treesitter.get_captures_at_pos()` + `nvim_get_hl()`). No highlighter
+of Omasnap's own runs at all, so it's automatically correct for whatever
+colorscheme, plugins, or LSP semantic tokens you actually have configured.
+This is also the one editor where Omasnap reads the selection itself from
+the editor rather than the Wayland primary selection — see
+`docs/adr/0007-neovim-rpc-highlighting.md` for why. No selection active in
+Neovim (or Neovim isn't reachable) falls back to the primary selection like
+every other editor.
+
+Anywhere else — a terminal not running Neovim, a browser, another editor —
+still snaps, highlighted generically, with the language detected from a
+shebang line when there's no filename to go on.
 
 Adding another editor means writing one file in `lib/editors/` (see
 `lib/editors/registry.mjs` for the small adapter interface every one of
