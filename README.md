@@ -121,19 +121,23 @@ The quick way — Omarchy's own plugin manager fetches the repo for you:
 
 ```bash
 omarchy plugin add https://github.com/keithrowell/omarchy-plugin-omasnap.git --enable
-~/.config/omarchy/plugins/com.keithrowell.omasnap/bin/install
 ```
 
-`omarchy plugin add` (add `--yes` to skip its confirmation prompt) clones
-this repo straight into `~/.config/omarchy/plugins/com.keithrowell.omasnap`,
-validates it against Omarchy's plugin schema, and enables it in the running
-shell — the "Enable the shell plugin" step below is already done for you.
-`bin/install` then finishes what enabling alone doesn't: it compiles the
-vendored Zed grammars (below — skip this and code still snaps, just in
-plain text instead of Zed's real colours), adds an app-launcher entry,
-links `omasnap` onto your PATH, checks the required packages, and prints
-the Hyprland binding to add by hand. Update later with
-`omarchy plugin update com.keithrowell.omasnap`.
+That's the whole install. `omarchy plugin add` (add `--yes` to skip its
+confirmation prompt) clones this repo straight into
+`~/.config/omarchy/plugins/com.keithrowell.omasnap`, validates it against
+Omarchy's plugin schema, and enables it in the running shell — the "Enable
+the shell plugin" step below is already done for you. The moment it's
+enabled, `app/Service.qml` runs `bin/install` itself (there's no separate
+step to remember — see `docs/adr/0004-service-runs-its-own-setup.md`): it
+compiles the vendored Zed grammars (skip this and code still snaps, just in
+plain text instead of real colours — the one part of this you'd actually
+notice), adds an app-launcher entry, links `omasnap` onto your PATH, and
+checks the required packages, silently — you'll only see a notification if
+a real problem turned up (a missing package, a failed grammar build) or the
+grammars just finished compiling for the first time. Update later with
+`omarchy plugin update com.keithrowell.omasnap` (also self-sets-up on the
+next load).
 
 Developing on this repo instead? Keep a checkout elsewhere (a working
 clone, or this repo as a submodule of your dotfiles the way the other
@@ -145,6 +149,11 @@ git clone https://github.com/keithrowell/omarchy-plugin-omasnap.git
 cd omarchy-plugin-omasnap
 bin/install
 ```
+
+Only needed once, for the symlink itself — `Service.qml` can't create it
+(nothing's loaded at that path yet). After `omarchy plugin enable` below,
+every later change here keeps itself set up the same way the marketplace
+path does.
 
 `bin/install` is idempotent (`--dry-run` shows what it would do without
 touching anything; `--uninstall` reverses it; running it again reports
@@ -308,6 +317,13 @@ Pacman's `PACMAN_DEBUG_KEYS` plays a similar role for.
 
 `docs/agentile/` and `docs/adr/` carry the backlog and the decision records
 this project is built from (see `CLAUDE.md`).
+
+## Contributing
+
+Bug reports, feature requests, and pull requests are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the development loop and ground
+rules, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for how we expect
+people to treat each other here.
 
 ## Licence
 
