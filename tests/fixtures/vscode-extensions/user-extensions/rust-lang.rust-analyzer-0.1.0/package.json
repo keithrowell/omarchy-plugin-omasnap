@@ -1,0 +1,6 @@
+{
+  "name": "rust-analyzer",
+  "contributes": {
+    "languages": [{ "id": "rust", "extensions": [".rs"] }]
+  }
+}

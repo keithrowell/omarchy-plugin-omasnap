@@ -57,6 +57,15 @@ test("filenameFromTitle(vscode): marker, filename, folder, app name", () => {
   assert.equal(filenameFromTitle("● index.ts - omasnap - Visual Studio Code", "vscode"), "index.ts");
 });
 
+test("filenameFromTitle(vscode): a hyphenated filename is kept whole, not truncated at its own hyphen", () => {
+  assert.equal(filenameFromTitle("omasnap-demo.js - sakusei - Visual Studio Code", "vscode"), "omasnap-demo.js");
+  assert.equal(filenameFromTitle("my-component.tsx - project - Visual Studio Code", "vscode"), "my-component.tsx");
+});
+
+test("filenameFromTitle(vscode): no folder open, a bare dotted filename is used whole", () => {
+  assert.equal(filenameFromTitle("sample.js - Visual Studio Code", "vscode"), "sample.js");
+});
+
 test('filenameFromTitle("other") never guesses, even for an editor-shaped title', () => {
   assert.equal(filenameFromTitle("◐ Claude Code", "other"), null);
 });
@@ -72,8 +81,8 @@ test("filenameFromTitle(zed): no em dash, a dotted bare filename is used whole",
 
 // --- prepareSnap --------------------------------------------------------------
 
-test("prepareSnap: Zed class + title resolves language from the filename and reports editor zed", () => {
-  const result = prepareSnap({
+test("prepareSnap: Zed class + title resolves language from the filename and reports editor zed", async () => {
+  const result = await prepareSnap({
     text: "const a = 1;\n",
     windowClass: "dev.zed.Zed",
     title: "sample.js — sample.js",
@@ -87,8 +96,8 @@ test("prepareSnap: Zed class + title resolves language from the filename and rep
   assert.equal(result.snap.filename, "sample.js");
 });
 
-test('prepareSnap: "other" class with Python shebang text detects the language from content, and the title bar falls back to it', () => {
-  const result = prepareSnap({
+test('prepareSnap: "other" class with Python shebang text detects the language from content, and the title bar falls back to it', async () => {
+  const result = await prepareSnap({
     text: "#!/usr/bin/env python3\nprint('hi')\n",
     windowClass: "foot",
     title: "some terminal — foot",
@@ -101,8 +110,8 @@ test('prepareSnap: "other" class with Python shebang text detects the language f
   assert.equal(result.snap.filename, "python");
 });
 
-test("prepareSnap: unknown language falls back to snippet and plain (canned) spans", () => {
-  const result = prepareSnap({
+test("prepareSnap: unknown language falls back to snippet and plain (canned) spans", async () => {
+  const result = await prepareSnap({
     text: "just some text\n",
     windowClass: "foot",
     title: "",
@@ -115,8 +124,8 @@ test("prepareSnap: unknown language falls back to snippet and plain (canned) spa
   assert.deepEqual(result.snap.lines[0], [{ text: "just some text", color: "#ffffff", fontStyle: null, fontWeight: null }]);
 });
 
-test("prepareSnap: an explicit null language forces plain (no detection), unlike an omitted language", () => {
-  const result = prepareSnap({
+test("prepareSnap: an explicit null language forces plain (no detection), unlike an omitted language", async () => {
+  const result = await prepareSnap({
     text: "const a = 1;\n",
     windowClass: "dev.zed.Zed",
     title: "sample.js — sample.js",
@@ -129,8 +138,8 @@ test("prepareSnap: an explicit null language forces plain (no detection), unlike
   assert.equal(result.detected.language, null);
 });
 
-test("prepareSnap: an explicit language override wins over detection", () => {
-  const result = prepareSnap({
+test("prepareSnap: an explicit language override wins over detection", async () => {
+  const result = await prepareSnap({
     text: "const a = 1;\n",
     windowClass: "dev.zed.Zed",
     title: "sample.js — sample.js",
@@ -143,9 +152,9 @@ test("prepareSnap: an explicit language override wins over detection", () => {
   assert.equal(result.detected.language, "python");
 });
 
-test(`prepareSnap: a selection over ${MAX_LINES} lines truncates to exactly ${MAX_LINES} with the exact warning`, () => {
+test(`prepareSnap: a selection over ${MAX_LINES} lines truncates to exactly ${MAX_LINES} with the exact warning`, async () => {
   const lines = Array.from({ length: 201 }, (_, i) => `line ${i}`);
-  const result = prepareSnap({
+  const result = await prepareSnap({
     text: lines.join("\n"),
     windowClass: "foot",
     title: "",
@@ -157,8 +166,8 @@ test(`prepareSnap: a selection over ${MAX_LINES} lines truncates to exactly ${MA
   assert.ok(result.warnings.includes("snapping first 200 lines"));
 });
 
-test("prepareSnap: a NUL byte in the selection is stripped and warned about", () => {
-  const result = prepareSnap({
+test("prepareSnap: a NUL byte in the selection is stripped and warned about", async () => {
+  const result = await prepareSnap({
     text: "abc\0def",
     windowClass: "foot",
     title: "",
@@ -170,8 +179,8 @@ test("prepareSnap: a NUL byte in the selection is stripped and warned about", ()
   assert.ok(!result.snap.lines.flat().some((span) => span.text.includes("\0")));
 });
 
-test("prepareSnap: a transient window class is treated as other, with no filename guessed", () => {
-  const result = prepareSnap({
+test("prepareSnap: a transient window class is treated as other, with no filename guessed", async () => {
+  const result = await prepareSnap({
     text: "x = 1\n",
     windowClass: "gcr-prompter",
     title: "sample.js — sample.js",
@@ -183,9 +192,9 @@ test("prepareSnap: a transient window class is treated as other, with no filenam
   assert.equal(result.detected.filename, null);
 });
 
-test("prepareSnap: a six-tab-indented selection is dedented before highlighting, and the removed indent is reported", () => {
+test("prepareSnap: a six-tab-indented selection is dedented before highlighting, and the removed indent is reported", async () => {
   let recordedText = null;
-  const result = prepareSnap({
+  const result = await prepareSnap({
     text: "\t\t\t\t\t\tfoo\n\t\t\t\t\t\t\tbar",
     windowClass: "foot",
     title: "",
@@ -200,6 +209,138 @@ test("prepareSnap: a six-tab-indented selection is dedented before highlighting,
   assert.equal(result.snap.lines[0][0].text, "foo");
   assert.equal(result.snap.lines[1][0].text, "\tbar");
   assert.equal(result.detected.removedIndent, "\t".repeat(6));
+});
+
+// A minimal stand-in editor adapter (see lib/editors/registry.mjs for the
+// real interface) for exercising prepareSnap's dispatch logic without a
+// real editor's highlighter/RPC/theme requirements.
+function stubEditor(id, overrides = {}) {
+  return {
+    id,
+    async detect() {
+      return {};
+    },
+    async resolveSelection() {
+      return null;
+    },
+    async highlight() {
+      return null;
+    },
+    font() {
+      return { family: "monospace", size: 13 };
+    },
+    filenameFromTitle() {
+      return null;
+    },
+    ...overrides,
+  };
+}
+
+function stubDetect(editor, context = {}) {
+  return async () => ({ editor, context });
+}
+
+test("prepareSnap: the matched adapter's highlight() wins outright — the universal fallback never runs when it resolves", async () => {
+  const editor = stubEditor("vscode", { highlight: async ({ text }) => canned(text) });
+  const result = await prepareSnap({
+    text: "const a = 1;\n",
+    theme: GRUVBOX,
+    detectContext: stubDetect(editor),
+    highlightFn: () => {
+      throw new Error("the universal fallback should not run when the adapter's own highlighter succeeds");
+    },
+  });
+  assert.equal(result.snap.editor, "vscode");
+  assert.equal(result.snap.lines[0][0].color, "#ffffff");
+});
+
+test("prepareSnap: the matched adapter's highlight() returning null falls back to the universal highlighter", async () => {
+  const editor = stubEditor("vscode", { highlight: async () => null });
+  const result = await prepareSnap({
+    text: "fn main() {}\n",
+    theme: GRUVBOX,
+    detectContext: stubDetect(editor),
+    highlightFn: ({ text }) => canned(text),
+  });
+  assert.equal(result.snap.editor, "vscode");
+  assert.equal(result.snap.lines[0][0].color, "#ffffff");
+});
+
+test("prepareSnap: resolveSelection's overridden text/filename replace the primary selection and title parsing", async () => {
+  const editor = stubEditor("neovim", {
+    resolveSelection: async () => ({ text: "print('from rpc')\n" }),
+    filenameFromTitle: () => "should-not-be-used.txt",
+  });
+  const result = await prepareSnap({
+    text: "ignored primary selection\n",
+    title: "ignored title",
+    theme: GRUVBOX,
+    detectContext: stubDetect(editor),
+    highlightFn: ({ text }) => canned(text),
+  });
+  assert.equal(result.snap.lines[0][0].text, "print('from rpc')");
+});
+
+test("prepareSnap: resolveSelection's own pre-highlighted lines are used as-is, and highlight() is never called", async () => {
+  const preHighlighted = [[{ text: "x", color: "#123456", fontStyle: null, fontWeight: null }]];
+  const editor = stubEditor("neovim", {
+    resolveSelection: async () => ({ text: "x", lines: preHighlighted }),
+    highlight: async () => {
+      throw new Error("highlight() should never run when resolveSelection already supplied lines");
+    },
+  });
+  const result = await prepareSnap({
+    text: "ignored\n",
+    theme: GRUVBOX,
+    detectContext: stubDetect(editor),
+    highlightFn: () => {
+      throw new Error("the universal fallback should not run either");
+    },
+  });
+  assert.deepEqual(result.snap.lines, preHighlighted);
+});
+
+test("prepareSnap: dedent trims an override's pre-highlighted spans in step with the text", async () => {
+  const preHighlighted = [
+    [{ text: "    foo", color: "#111111", fontStyle: null, fontWeight: null }],
+    [{ text: "      bar", color: "#222222", fontStyle: null, fontWeight: null }],
+  ];
+  const editor = stubEditor("neovim", {
+    resolveSelection: async () => ({ text: "    foo\n      bar", lines: preHighlighted }),
+  });
+  const result = await prepareSnap({
+    text: "ignored",
+    theme: GRUVBOX,
+    detectContext: stubDetect(editor),
+  });
+  assert.equal(result.snap.lines[0][0].text, "foo");
+  assert.equal(result.snap.lines[0][0].color, "#111111");
+  assert.equal(result.snap.lines[1][0].text, "  bar");
+  assert.equal(result.snap.lines[1][0].color, "#222222");
+  assert.equal(result.detected.removedIndent, "    ");
+});
+
+test("prepareSnap: font() comes from the matched adapter unless fontFn overrides it", async () => {
+  const editor = stubEditor("vscode", { font: () => ({ family: "Adapter Font", size: 42 }) });
+  const result = await prepareSnap({
+    text: "x\n",
+    theme: GRUVBOX,
+    detectContext: stubDetect(editor),
+  });
+  assert.deepEqual(result.snap.font, { family: "Adapter Font", size: 42 });
+});
+
+test("prepareSnap: a real VS Code window, end to end through the registry, reports editor vscode", async () => {
+  const result = await prepareSnap({
+    text: "const a = 1;\n",
+    windowClass: "code",
+    title: "sample.js - myproject - Visual Studio Code",
+    theme: GRUVBOX,
+    fontFn: () => ({ family: "monospace", size: 13 }),
+  });
+  assert.equal(result.snap.editor, "vscode");
+  assert.equal(result.snap.language, "javascript");
+  assert.equal(result.snap.filename, "sample.js");
 });
 
 // --- CLI -----------------------------------------------------------------
@@ -377,7 +518,7 @@ function scratchScriptEnv(prefix) {
   // so HOME needs a real ~/.local/state/omarchy/current/{theme.name,
   // background,theme/} for readTheme() to find, or "prepare" fails outright.
   cpSync(join(ROOT, "tests", "fixtures", "themes", "gruvbox-dark"), join(home, ".local", "state", "omarchy", "current"), { recursive: true });
-  for (const tool of ["bash", "readlink", "dirname", "mkdir", "rm", "date", "cat"]) {
+  for (const tool of ["bash", "readlink", "dirname", "mkdir", "rm", "date", "cat", "mktemp", "stat", "id"]) {
     const real = join("/usr/bin", tool);
     if (existsSync(real)) symlinkSync(real, join(pathDir, tool));
   }

@@ -61,7 +61,7 @@ with a bespoke `zed-theme.json`.
 ```js
 import { readTheme } from "./lib/theme.mjs";
 import { highlight } from "./lib/highlight/zed.mjs";
-import { readEditorFont } from "./lib/editors.mjs";
+import { readEditorFont } from "./lib/fonts.mjs";
 
 const theme = readTheme(themeDir);
 const { lines } = highlight({ text, language, theme });

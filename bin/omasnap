@@ -54,6 +54,42 @@ require_value() {
   fi
 }
 
+# `${XDG_RUNTIME_DIR:-/tmp}` (the old fallback) put our per-run scratch
+# files, including the raw selection text, under a directory every account
+# on the machine can read and write when the variable happens to be unset.
+# Fail closed instead — systemd/uwsm always sets it for a real login
+# session, so this only ever fires in a stripped-down environment that
+# shouldn't be handling a selection anyway.
+require_runtime_dir() {
+  if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
+    echo "omasnap: XDG_RUNTIME_DIR is not set; refusing to fall back to shared /tmp" >&2
+    exit 1
+  fi
+  printf '%s\n' "$XDG_RUNTIME_DIR"
+}
+
+# `mkdir -p -m 700` only sets the mode at the moment it *creates* the
+# directory — it's a silent no-op if anything, including a symlink or a
+# directory some other same-user process created first, already exists at
+# that path. Verify what we actually got before trusting it with the
+# selection text: a real directory (not a symlink), owned by us, mode 700.
+# Refuse rather than repair — a directory that isn't ours to begin with
+# might already be watched or replaced by whatever put it there.
+verify_private_dir() {
+  local dir="$1"
+  if [ -L "$dir" ] || [ ! -d "$dir" ]; then
+    echo "omasnap: $dir exists and is not a plain directory; refusing to use it" >&2
+    exit 1
+  fi
+  local owner mode
+  owner="$(stat -c '%u' "$dir")"
+  mode="$(stat -c '%a' "$dir")"
+  if [ "$owner" != "$(id -u)" ] || [ "$mode" != "700" ]; then
+    echo "omasnap: $dir is not a private directory (owner $owner, mode $mode); refusing to use it" >&2
+    exit 1
+  fi
+}
+
 FIXTURE=""
 OUT=""
 THEME_DIR=""
@@ -104,13 +140,22 @@ if [ -z "$FIXTURE" ]; then
   # *into* REQUEST rather than recording their paths: SELECTION and WINDOW
   # are gone the moment this script exits. `app/Service.qml` deletes its own
   # three files once that overlay actually closes (ADR-0003).
-  RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/omasnap"
+  RUNTIME_DIR="$(require_runtime_dir)/omasnap"
   mkdir -p -m 700 "$RUNTIME_DIR"
-  SELECTION="$RUNTIME_DIR/selection-$$.txt"
-  WINDOW="$RUNTIME_DIR/window-$$.json"
-  REQUEST="$RUNTIME_DIR/request-$$.json"
-  INPUT="$RUNTIME_DIR/input-$$.json"
-  PREVIEW_PNG="$RUNTIME_DIR/preview-$$.png"
+  verify_private_dir "$RUNTIME_DIR"
+  # Unpredictable names, not `-$$` (a PID is guessable/visible to any other
+  # process on the machine): a fixed, predictable path let another same-user
+  # process plant a symlink there ahead of us, which the `>` redirects below
+  # would then write the selection/window/request data through. `mktemp`
+  # creates each file now, atomically and privately (mode 600, verified
+  # above to be inside a directory only this user can write to), so the
+  # later writes reopen a regular file we already own rather than a
+  # pathname an attacker could have raced.
+  SELECTION="$(mktemp "$RUNTIME_DIR/selection-XXXXXXXX.txt")"
+  WINDOW="$(mktemp "$RUNTIME_DIR/window-XXXXXXXX.json")"
+  REQUEST="$(mktemp "$RUNTIME_DIR/request-XXXXXXXX.json")"
+  INPUT="$(mktemp "$RUNTIME_DIR/input-XXXXXXXX.json")"
+  PREVIEW_PNG="$(mktemp "$RUNTIME_DIR/preview-XXXXXXXX.png")"
   trap 'rm -f "$SELECTION" "$WINDOW" "$REQUEST" "$INPUT" "$PREVIEW_PNG"' EXIT
 
   NODE_ARGS=(--selection "$SELECTION" --window "$WINDOW" --request "$REQUEST" --out "$INPUT")
@@ -208,7 +253,7 @@ if [ -z "$FIXTURE" ]; then
   # this IPC target directly, the same way testers previously ran
   # `qs -p app/Main.qml` directly with those two set as environment
   # variables, bypassing this script either way.
-  IPC_ERROR="$RUNTIME_DIR/ipc-error-$$.txt"
+  IPC_ERROR="$(mktemp "$RUNTIME_DIR/ipc-error-XXXXXXXX.txt")"
   if ! omarchy-shell omasnap show "$INPUT" "$REQUEST" "$ROOT" "$PREVIEW_PNG" "" "" 2>"$IPC_ERROR"; then
     err="$(cat "$IPC_ERROR" 2>/dev/null)"
     rm -f "$IPC_ERROR"
@@ -258,9 +303,10 @@ if [ ! -d "$OUT_DIR" ]; then
 fi
 OUT="$(readlink -f "$OUT_DIR")/$(basename "$OUT")"
 
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/omasnap"
+RUNTIME_DIR="$(require_runtime_dir)/omasnap"
 mkdir -p -m 700 "$RUNTIME_DIR"
-INPUT="$RUNTIME_DIR/input-$$.json"
+verify_private_dir "$RUNTIME_DIR"
+INPUT="$(mktemp "$RUNTIME_DIR/input-XXXXXXXX.json")"
 trap 'rm -f "$INPUT"' EXIT
 
 INPUT_ARGS=(--fixture "$FIXTURE")

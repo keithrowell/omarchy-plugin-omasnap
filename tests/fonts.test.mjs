@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { stripJsonc, readEditorFont, resolveFontFamily } from "../lib/editors.mjs";
+import { stripJsonc, readEditorFont, resolveFontFamily } from "../lib/fonts.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const FIXTURES = join(ROOT, "tests", "fixtures", "editors");

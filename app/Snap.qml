@@ -220,10 +220,12 @@ Item {
         const headerHeight = 2 * headerPadding + heroHeight + headerSeparatorHeight;
 
         const title = snapData.filename || snapData.language || "snippet";
-        // "ZED · JAVASCRIPT", "VS CODE · PYTHON", "PLAIN TEXT" (source
-        // omitted for "other", language "PLAIN TEXT" when null) — see the
-        // spec's amended header criterion for the exact mapping.
-        const sourceLabel = snapData.editor === "zed" ? "ZED" : snapData.editor === "vscode" ? "VS CODE" : null;
+        // "ZED · JAVASCRIPT", "VS CODE · PYTHON", "NEOVIM · LUA", "PLAIN
+        // TEXT" (source omitted for "other", language "PLAIN TEXT" when
+        // null) — see the spec's amended header criterion for the exact
+        // mapping.
+        const sourceLabel =
+          snapData.editor === "zed" ? "ZED" : snapData.editor === "vscode" ? "VS CODE" : snapData.editor === "neovim" ? "NEOVIM" : null;
         const languageLabel = snapData.language ? String(snapData.language).toUpperCase() : "PLAIN TEXT";
         const subtitle = [sourceLabel, languageLabel].filter(Boolean).join(" · ");
 
@@ -409,6 +411,7 @@ Item {
             Text {
                 id: glyphText
                 text: mazeGlyph
+                textFormat: Text.PlainText
                 visible: frame !== null && iconFont.status === FontLoader.Ready && fontInfo.family === iconFont.name
                 color: frame ? frame.colors.accent : Qt.rgba(0, 0, 0, 1)
                 font.family: iconFont.name
@@ -508,6 +511,7 @@ Item {
                         horizontalAlignment: Text.AlignRight
                         verticalAlignment: Text.AlignVCenter
                         text: String(index + 1)
+                        textFormat: Text.PlainText
                         color: frame.lineNumberColor
                         font.family: frame.fontFamily
                         font.pixelSize: frame.fontSize

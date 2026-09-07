@@ -1,0 +1,12 @@
+{
+  "name": "theme-fixture",
+  "contributes": {
+    "themes": [
+      { "label": "Fixture Dark", "uiTheme": "vs-dark", "path": "./themes/fixture-dark-base.json" },
+      { "label": "Fixture Dark Child", "uiTheme": "vs-dark", "path": "./themes/fixture-dark-child.json" },
+      { "label": "%nlsLabel%", "uiTheme": "vs-dark", "path": "./themes/fixture-dark-base.json" },
+      { "label": "Fixture JSONC", "uiTheme": "vs-dark", "path": "./themes/fixture-jsonc.json" },
+      { "label": "Fixture Empty", "uiTheme": "vs-dark", "path": "./themes/fixture-empty.json" }
+    ]
+  }
+}

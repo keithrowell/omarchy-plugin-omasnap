@@ -1,0 +1,5 @@
+package: vscode-textmate
+version: 9.3.2
+source:  npm registry (npm pack vscode-textmate@9.3.2)
+fetched: 2026-09-06
+licence: LICENSE.md

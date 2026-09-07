@@ -59,11 +59,44 @@ logo anywhere.
 ### Editors
 
 Zed is colour-exact: the same tree-sitter grammars and highlight queries
-Zed itself uses, coloured from the Zed Omarchy theme. Anywhere else — a
-terminal, a browser, another editor — still snaps, highlighted the same
-way, with the language detected from a shebang line when there's no
-filename to go on. VS Code's own exact colouring (its `tokenColors`) is
-next, and not yet started — if you use VS Code, a PR would be very welcome.
+Zed itself uses, coloured from the Zed Omarchy theme. VS Code is colour-exact
+too, a different way: the same TextMate tokenizer VS Code itself runs
+(`vscode-textmate`/`vscode-oniguruma`), against a grammar read live off your
+actual installed VS Code — its own built-in languages, or a marketplace
+extension's, whichever provides one — coloured from **whichever theme VS
+Code is actually showing right now** (`workbench.colorTheme`, resolved to
+its real theme file — see `docs/adr/0006-vscode-active-theme.md`), not
+from Omarchy's own bundled VS Code theme. If you run Gruvbox, Nord, or
+anything else in VS Code instead of Omarchy's theme, that's what Omasnap
+reproduces — the same "however the editor actually shows it" standard Zed
+already gets, not a second, editor-agnostic colour scheme in disguise. A
+language with no installed grammar (this is common for Rust and Go — see
+`lib/vscode-extensions.mjs`, both colour purely via their language server,
+with no static grammar to match) falls back to the generic highlighter
+below.
+
+Neovim is colour-exact a third way, and the simplest: since it runs inside
+a terminal (no window of its own to detect), Omasnap finds it in the
+terminal's process tree and asks the *live* Neovim itself — over the RPC
+socket every Neovim instance already exposes — for its current visual
+selection and the exact colours it's already rendering for it
+(`vim.treesitter.get_captures_at_pos()` + `nvim_get_hl()`). No highlighter
+of Omasnap's own runs at all, so it's automatically correct for whatever
+colorscheme, plugins, or LSP semantic tokens you actually have configured.
+This is also the one editor where Omasnap reads the selection itself from
+the editor rather than the Wayland primary selection — see
+`docs/adr/0007-neovim-rpc-highlighting.md` for why. No selection active in
+Neovim (or Neovim isn't reachable) falls back to the primary selection like
+every other editor.
+
+Anywhere else — a terminal not running Neovim, a browser, another editor —
+still snaps, highlighted generically, with the language detected from a
+shebang line when there's no filename to go on.
+
+Adding another editor means writing one file in `lib/editors/` (see
+`lib/editors/registry.mjs` for the small adapter interface every one of
+these implements) — not finding and extending several hardcoded if/else
+chains.
 
 ## Gallery
 
@@ -88,19 +121,23 @@ The quick way — Omarchy's own plugin manager fetches the repo for you:
 
 ```bash
 omarchy plugin add https://github.com/keithrowell/omarchy-plugin-omasnap.git --enable
-~/.config/omarchy/plugins/com.keithrowell.omasnap/bin/install
 ```
 
-`omarchy plugin add` (add `--yes` to skip its confirmation prompt) clones
-this repo straight into `~/.config/omarchy/plugins/com.keithrowell.omasnap`,
-validates it against Omarchy's plugin schema, and enables it in the running
-shell — the "Enable the shell plugin" step below is already done for you.
-`bin/install` then finishes what enabling alone doesn't: it compiles the
-vendored Zed grammars (below — skip this and code still snaps, just in
-plain text instead of Zed's real colours), adds an app-launcher entry,
-links `omasnap` onto your PATH, checks the required packages, and prints
-the Hyprland binding to add by hand. Update later with
-`omarchy plugin update com.keithrowell.omasnap`.
+That's the whole install. `omarchy plugin add` (add `--yes` to skip its
+confirmation prompt) clones this repo straight into
+`~/.config/omarchy/plugins/com.keithrowell.omasnap`, validates it against
+Omarchy's plugin schema, and enables it in the running shell — the "Enable
+the shell plugin" step below is already done for you. The moment it's
+enabled, `app/Service.qml` runs `bin/install` itself (there's no separate
+step to remember — see `docs/adr/0004-service-runs-its-own-setup.md`): it
+compiles the vendored Zed grammars (skip this and code still snaps, just in
+plain text instead of real colours — the one part of this you'd actually
+notice), adds an app-launcher entry, links `omasnap` onto your PATH, and
+checks the required packages, silently — you'll only see a notification if
+a real problem turned up (a missing package, a failed grammar build) or the
+grammars just finished compiling for the first time. Update later with
+`omarchy plugin update com.keithrowell.omasnap` (also self-sets-up on the
+next load).
 
 Developing on this repo instead? Keep a checkout elsewhere (a working
 clone, or this repo as a submodule of your dotfiles the way the other
@@ -112,6 +149,11 @@ git clone https://github.com/keithrowell/omarchy-plugin-omasnap.git
 cd omarchy-plugin-omasnap
 bin/install
 ```
+
+Only needed once, for the symlink itself — `Service.qml` can't create it
+(nothing's loaded at that path yet). After `omarchy plugin enable` below,
+every later change here keeps itself set up the same way the marketplace
+path does.
 
 `bin/install` is idempotent (`--dry-run` shows what it would do without
 touching anything; `--uninstall` reverses it; running it again reports
